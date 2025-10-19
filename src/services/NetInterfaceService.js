@@ -91,6 +91,68 @@ export function detectTraffic(deviceIndex, devices) {
     });
 }
 
+async function getActiveRoutes() {
+    // get route print output
+    const stdout = await new Promise((resolve, reject) => {
+        exec('route print 0.0.0.0', (error, stdout) => {
+            if (error) {
+                reject(error);
+            } else {
+                resolve(stdout);
+            }
+        });
+    });
+
+    let result = [];
+    const lines = stdout.split(/\r?\n/);
+
+    let start = -1;
+    let end = -1;
+
+    // find "Active Routes:" start
+    for (let i = 0; i < lines.length; i++) {
+        if (lines[i].includes('Active Routes:')) {
+            start = i + 1; // the actual data starts after this line
+        } else if (start !== -1 && lines[i].includes('=====')) {
+            end = i;
+            break;
+        }
+    }
+
+    if (start === -1 || end === -1) return [];
+
+    // slice out the relevant lines, filter blanks
+    const routeLines = lines.slice(start, end).filter((l) => l.trim() !== '');
+
+    // optional: parse into objects
+    for (let i = 1; i < routeLines.length; i++) {
+        const parts = routeLines[i].trim().split(/\s+/);
+        result.push({
+            destination: parts[0],
+            netmask: parts[1],
+            gateway: parts[2],
+            interface: parts[3],
+            metric: parts[4] ? parseInt(parts[4], 10) : undefined,
+        });
+    }
+
+    return result;
+}
+
+function getIp(routes) {
+    // Try to find VPN route (0.0.0.0/1 or 128.0.0.0/1)
+    const vpn = routes.find(
+        (r) =>
+            (r.destination === '0.0.0.0' && r.netmask === '128.0.0.0') ||
+            (r.destination === '128.0.0.0' && r.netmask === '128.0.0.0')
+    );
+    if (vpn) return vpn.interface;
+
+    // Else, return the normal default route (0.0.0.0/0)
+    const normal = routes.find((r) => r.destination === '0.0.0.0' && r.netmask === '0.0.0.0');
+    return normal ? normal.interface : null;
+}
+
 /**
  * Finds the default network device using the system's route table.
  * This function is specifically for Windows.
@@ -99,21 +161,8 @@ export function detectTraffic(deviceIndex, devices) {
  */
 export async function findByRoute(devices) {
     try {
-        const stdout = await new Promise((resolve, reject) => {
-            exec('route print 0.0.0.0', (error, stdout) => {
-                if (error) {
-                    reject(error);
-                } else {
-                    resolve(stdout);
-                }
-            });
-        });
-
-        const defaultInterface = stdout
-            .split('\n')
-            .find((line) => line.trim().startsWith('0.0.0.0'))
-            ?.trim()
-            .split(/\s+/)[3];
+        const routes = await getActiveRoutes();
+        const defaultInterface = getIp(routes);
 
         if (!defaultInterface) {
             return undefined;
