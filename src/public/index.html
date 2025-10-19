@@ -20,12 +20,18 @@
                         <span class="app-title">BPSR-PSO</span>
                     </div>
                     <div class="button-group">
-                        <select id="sortDropdown" onchange="changeSortMode()" class="sort-select" title="Sort by">
-                            <option value="damage" selected>Damage</option>
-                            <option value="healing">Healing</option>
-                            <option value="dps">DPS</option>
-                            <option value="hps">HPS</option>
-                        </select>
+                        <div class="custom-sort-select">
+                            <button type="button" id="sortButton" class="sort-select">
+                                <span id="sortText">Damage</span>
+                                <span class="dropdown-arrow">▼</span>
+                            </button>
+                            <div id="sortDropdown" class="sort-dropdown hidden">
+                                <div class="sort-option active" data-value="damage">Damage</div>
+                                <div class="sort-option" data-value="healing">Healing</div>
+                                <div class="sort-option" data-value="dps">DPS</div>
+                                <div class="sort-option" data-value="hps">HPS</div>
+                            </div>
+                        </div>
                         <button id="clearButton" onclick="clearData()" title="Clear Data">Clear</button>
                         <button id="pauseButton" onclick="togglePause()" title="Pause/Resume">Pause</button>
                         <button id="helpButton" onclick="toggleHelp()" title="Help">❓</button>
@@ -39,6 +45,53 @@
                     <div class="settings-option">
                         <label for="opacitySlider">Background Opacity</label>
                         <input type="range" id="opacitySlider" min="0" max="1" step="0.05" value="0.80" />
+                    </div>
+                    <div class="settings-option">
+                        <label for="classFilterButton">Filter by Class:</label>
+                        <div class="custom-multiselect">
+                            <button type="button" id="classFilterButton" class="multiselect-button">
+                                <span id="classFilterText">All Classes</span>
+                                <span class="dropdown-arrow">▼</span>
+                            </button>
+                            <div id="classFilterDropdown" class="multiselect-dropdown hidden">
+                                <label class="multiselect-option">
+                                    <input type="checkbox" value="all" checked data-class-filter />
+                                    <span>All Classes</span>
+                                </label>
+                                <label class="multiselect-option">
+                                    <input type="checkbox" value="Frost Mage" data-class-filter />
+                                    <span>Frost Mage</span>
+                                </label>
+                                <label class="multiselect-option">
+                                    <input type="checkbox" value="Heavy Guardian" data-class-filter />
+                                    <span>Heavy Guardian</span>
+                                </label>
+                                <label class="multiselect-option">
+                                    <input type="checkbox" value="Marksman" data-class-filter />
+                                    <span>Marksman</span>
+                                </label>
+                                <label class="multiselect-option">
+                                    <input type="checkbox" value="Shield Knight" data-class-filter />
+                                    <span>Shield Knight</span>
+                                </label>
+                                <label class="multiselect-option">
+                                    <input type="checkbox" value="Soul Musician" data-class-filter />
+                                    <span>Soul Musician</span>
+                                </label>
+                                <label class="multiselect-option">
+                                    <input type="checkbox" value="Stormblade" data-class-filter />
+                                    <span>Stormblade</span>
+                                </label>
+                                <label class="multiselect-option">
+                                    <input type="checkbox" value="Verdant Oracle" data-class-filter />
+                                    <span>Verdant Oracle</span>
+                                </label>
+                                <label class="multiselect-option">
+                                    <input type="checkbox" value="Wind Knight" data-class-filter />
+                                    <span>Wind Knight</span>
+                                </label>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 <div id="helpContainer" class="help-container hidden">

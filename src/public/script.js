@@ -36,11 +36,16 @@ const closeButton = document.getElementById('closeButton');
 const allButtons = [clearButton, pauseButton, helpButton, settingsButton, closeButton];
 const serverStatus = document.getElementById('serverStatus');
 const opacitySlider = document.getElementById('opacitySlider');
+const classFilterButton = document.getElementById('classFilterButton');
+const classFilterDropdown = document.getElementById('classFilterDropdown');
+const classFilterText = document.getElementById('classFilterText');
+const classFilterCheckboxes = document.querySelectorAll('[data-class-filter]');
 
 let allUsers = {};
 let userColors = {};
 let currentMode = 'damage';
 let isPaused = false;
+let selectedClasses = new Set(['all']);
 let socket = null;
 let isWebSocketConnected = false;
 let lastWebSocketMessage = Date.now();
@@ -75,12 +80,20 @@ function sortUsers(users, mode) {
 function renderDataList(users) {
     columnsContainer.innerHTML = '';
 
-    const totalDamageOverall = users.reduce((sum, user) => sum + user.total_damage.total, 0);
-    const totalHealingOverall = users.reduce((sum, user) => sum + user.total_healing.total, 0);
+    let filteredUsers = users;
+    if (!selectedClasses.has('all') && selectedClasses.size > 0) {
+        filteredUsers = users.filter((user) => {
+            if (!user.profession) return false;
+            const professionValue = user.profession.split('(')[0].trim();
+            return selectedClasses.has(professionValue);
+        });
+    }
 
-    sortUsers(users, currentMode);
+    const totalDamageOverall = filteredUsers.reduce((sum, user) => sum + user.total_damage.total, 0);
+    const totalHealingOverall = filteredUsers.reduce((sum, user) => sum + user.total_healing.total, 0);
+    sortUsers(filteredUsers, currentMode);
 
-    users.forEach((user, index) => {
+    filteredUsers.forEach((user, index) => {
         if (!userColors[user.id]) {
             userColors[user.id] = getNextColorShades();
         }
@@ -175,12 +188,6 @@ function processDataUpdate(data) {
         allUsers[userId] = updatedUser;
     }
 
-    updateAll();
-}
-
-function changeSortMode() {
-    const dropdown = document.getElementById('sortDropdown');
-    currentMode = dropdown.value;
     updateAll();
 }
 
@@ -287,7 +294,7 @@ function toggleSettings() {
     } else {
         settingsContainer.classList.remove('hidden');
         columnsContainer.classList.add('hidden');
-        helpContainer.classList.add('hidden'); // Also hide help
+        helpContainer.classList.add('hidden');
     }
 }
 
@@ -299,12 +306,26 @@ function toggleHelp() {
     } else {
         helpContainer.classList.remove('hidden');
         columnsContainer.classList.add('hidden');
-        settingsContainer.classList.add('hidden'); // Also hide settings
+        settingsContainer.classList.add('hidden');
     }
 }
 
 function setBackgroundOpacity(value) {
     document.documentElement.style.setProperty('--main-bg-opacity', value);
+}
+
+function updateClassFilterText() {
+    if (!classFilterText) return;
+
+    if (selectedClasses.has('all')) {
+        classFilterText.textContent = 'All Classes';
+    } else if (selectedClasses.size === 1) {
+        classFilterText.textContent = Array.from(selectedClasses)[0];
+    } else if (selectedClasses.size > 1) {
+        classFilterText.textContent = `${selectedClasses.size} classes selected`;
+    } else {
+        classFilterText.textContent = 'All Classes';
+    }
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -315,6 +336,100 @@ document.addEventListener('DOMContentLoaded', () => {
     opacitySlider.addEventListener('input', (event) => {
         setBackgroundOpacity(event.target.value);
     });
+
+    // Custom sort dropdown
+    const sortButton = document.getElementById('sortButton');
+    const sortDropdown = document.getElementById('sortDropdown');
+    const sortText = document.getElementById('sortText');
+    const sortOptions = document.querySelectorAll('.sort-option');
+
+    if (sortButton && sortDropdown) {
+        sortButton.addEventListener('click', (e) => {
+            e.stopPropagation();
+            sortDropdown.classList.toggle('hidden');
+            sortButton.classList.toggle('open');
+        });
+
+        sortOptions.forEach((option) => {
+            option.addEventListener('click', () => {
+                const value = option.getAttribute('data-value');
+                currentMode = value;
+                sortText.textContent = option.textContent;
+
+                sortOptions.forEach((opt) => opt.classList.remove('active'));
+                option.classList.add('active');
+
+                sortDropdown.classList.add('hidden');
+                sortButton.classList.remove('open');
+                updateAll();
+            });
+        });
+
+        document.addEventListener('click', (e) => {
+            if (!sortButton.contains(e.target) && !sortDropdown.contains(e.target)) {
+                sortDropdown.classList.add('hidden');
+                sortButton.classList.remove('open');
+            }
+        });
+    }
+
+    // Toggle class filter dropdown
+    if (classFilterButton) {
+        classFilterButton.addEventListener('click', (e) => {
+            e.stopPropagation();
+            classFilterDropdown.classList.toggle('hidden');
+            classFilterButton.classList.toggle('open');
+        });
+    }
+
+    // Close class filter dropdown when clicking outside
+    document.addEventListener('click', (e) => {
+        if (classFilterButton && classFilterDropdown) {
+            if (!classFilterButton.contains(e.target) && !classFilterDropdown.contains(e.target)) {
+                classFilterDropdown.classList.add('hidden');
+                classFilterButton.classList.remove('open');
+            }
+        }
+    });
+
+    // Handle class filter checkbox changes
+    if (classFilterCheckboxes.length > 0) {
+        classFilterCheckboxes.forEach((checkbox) => {
+            checkbox.addEventListener('change', (e) => {
+                const allCheckbox = document.querySelector('[data-class-filter][value="all"]');
+                const otherCheckboxes = Array.from(classFilterCheckboxes).filter((cb) => cb.value !== 'all');
+
+                if (e.target.value === 'all') {
+                    if (e.target.checked) {
+                        otherCheckboxes.forEach((cb) => (cb.checked = false));
+                        selectedClasses = new Set(['all']);
+                    } else {
+                        e.target.checked = true;
+                        selectedClasses = new Set(['all']);
+                    }
+                } else {
+                    if (e.target.checked) {
+                        allCheckbox.checked = false;
+                    }
+
+                    selectedClasses.clear();
+                    otherCheckboxes.forEach((cb) => {
+                        if (cb.checked) {
+                            selectedClasses.add(cb.value);
+                        }
+                    });
+
+                    if (selectedClasses.size === 0) {
+                        allCheckbox.checked = true;
+                        selectedClasses = new Set(['all']);
+                    }
+                }
+
+                updateClassFilterText();
+                updateAll();
+            });
+        });
+    }
 
     // Listen for the passthrough toggle event from the main process
     window.electronAPI.onTogglePassthrough((isIgnoring) => {
