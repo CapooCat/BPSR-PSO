@@ -39,6 +39,7 @@ const opacitySlider = document.getElementById('opacitySlider');
 
 let allUsers = {};
 let userColors = {};
+let currentMode = 'damage';
 let isPaused = false;
 let socket = null;
 let isWebSocketConnected = false;
@@ -54,13 +55,30 @@ function formatNumber(num) {
     return Math.round(num).toString();
 }
 
+function sortUsers(users, mode) {
+    switch (mode) {
+        case 'damage':
+            return users.sort(
+                (a, b) => b.total_damage.total - a.total_damage.total || b.total_healing.total - a.total_healing.total
+            );
+        case 'healing':
+            return users.sort(
+                (a, b) => b.total_healing.total - a.total_healing.total || b.total_damage.total - a.total_damage.total
+            );
+        case 'dps':
+            return users.sort((a, b) => b.total_dps - a.total_dps || b.total_hps - a.total_hps);
+        case 'hps':
+            return users.sort((a, b) => b.total_hps - a.total_hps || b.total_dps - a.total_dps);
+    }
+}
+
 function renderDataList(users) {
     columnsContainer.innerHTML = '';
 
     const totalDamageOverall = users.reduce((sum, user) => sum + user.total_damage.total, 0);
     const totalHealingOverall = users.reduce((sum, user) => sum + user.total_healing.total, 0);
 
-    users.sort((a, b) => b.total_dps - a.total_dps);
+    sortUsers(users, currentMode);
 
     users.forEach((user, index) => {
         if (!userColors[user.id]) {
@@ -157,6 +175,12 @@ function processDataUpdate(data) {
         allUsers[userId] = updatedUser;
     }
 
+    updateAll();
+}
+
+function changeSortMode() {
+    const dropdown = document.getElementById('sortDropdown');
+    currentMode = dropdown.value;
     updateAll();
 }
 

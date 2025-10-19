@@ -15,7 +15,7 @@ body {
 }
 
 :root {
-    --main-bg-opacity: 0.05;
+    --main-bg-opacity: 0.80;
 }
 
 #app-wrapper {
@@ -303,4 +303,42 @@ body {
     text-align: right;
     white-space: nowrap;
     text-shadow: 1px 1px 1px #000;
+}
+
+.sort-select {
+    -webkit-app-region: no-drag;
+    font-size: 11px;
+    font-weight: normal;
+    padding: 4px 8px;
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 6px;
+    cursor: pointer;
+    transition:
+        background-color 0.2s ease,
+        transform 0.1s ease;
+    outline: none;
+    width: auto;
+    max-width: 85px;
+}
+
+.sort-select:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: translateY(-1px);
+}
+
+.sort-select:active {
+    transform: translateY(0);
+}
+
+.sort-select:focus {
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
+.sort-select option {
+    background: rgba(18, 21, 23, 0.95);
+    color: #fff;
+    padding: 6px;
+    font-weight: 500;
 }
