@@ -80,7 +80,7 @@ class Window {
             height: this.config.height,
             x: this.config.x,
             y: this.config.y,
-            minWidth: 400,
+            minWidth: 430,
             minHeight: 42,
             transparent: true,
             frame: false,
