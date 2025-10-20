@@ -184,6 +184,103 @@ body {
     font-size: 14px;
 }
 
+.custom-multiselect {
+    position: relative;
+    width: 100%;
+}
+
+.multiselect-button {
+    -webkit-app-region: no-drag;
+    width: 100%;
+    padding: 8px 12px;
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: background-color 0.2s ease;
+}
+
+.multiselect-button:hover {
+    background: rgba(255, 255, 255, 0.15);
+}
+
+.dropdown-arrow {
+    font-size: 10px;
+    transition: transform 0.2s ease;
+}
+
+.multiselect-button.open .dropdown-arrow {
+    transform: rotate(180deg);
+}
+
+.multiselect-dropdown {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    right: 0;
+    background: rgba(28, 31, 33, 0.98);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 6px;
+    max-height: 120px;
+    overflow-y: auto;
+    z-index: 1000;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+.multiselect-dropdown.hidden {
+    display: none;
+}
+
+.multiselect-option {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    cursor: pointer;
+    transition: background-color 0.15s ease;
+    font-size: 12px;
+}
+
+.multiselect-option:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.multiselect-option input[type='checkbox'] {
+    -webkit-app-region: no-drag;
+    cursor: pointer;
+    margin: 0;
+    width: 14px;
+    height: 14px;
+}
+
+.multiselect-option span {
+    color: #e0e0e0;
+    font-weight: 500;
+}
+
+.multiselect-option input[type='checkbox']:checked + span {
+    color: #fff;
+    font-weight: 600;
+}
+
+.multiselect-dropdown::-webkit-scrollbar {
+    width: 6px;
+}
+
+.multiselect-dropdown::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.2);
+}
+
+.multiselect-dropdown::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 3px;
+}
+
 .hidden {
     display: none !important;
 }
@@ -305,6 +402,11 @@ body {
     text-shadow: 1px 1px 1px #000;
 }
 
+.custom-sort-select {
+    position: relative;
+    display: inline-block;
+}
+
 .sort-select {
     -webkit-app-region: no-drag;
     font-size: 11px;
@@ -319,8 +421,11 @@ body {
         background-color 0.2s ease,
         transform 0.1s ease;
     outline: none;
-    width: auto;
-    max-width: 85px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+    min-width: 85px;
 }
 
 .sort-select:hover {
@@ -336,9 +441,48 @@ body {
     border-color: rgba(255, 255, 255, 0.3);
 }
 
-.sort-select option {
-    background: rgba(18, 21, 23, 0.95);
+.custom-sort-select .dropdown-arrow {
+    font-size: 8px;
     color: #fff;
-    padding: 6px;
+    transition: transform 0.2s ease;
+}
+
+.sort-select.open .dropdown-arrow {
+    transform: rotate(180deg);
+}
+
+.sort-dropdown {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    right: 0;
+    background: rgba(28, 31, 33, 0.98);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 6px;
+    overflow: hidden;
+    z-index: 1000;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+.sort-dropdown.hidden {
+    display: none;
+}
+
+.sort-option {
+    padding: 8px 12px;
+    cursor: pointer;
+    transition: background-color 0.15s ease;
+    font-size: 11px;
+    color: #e0e0e0;
     font-weight: 500;
+}
+
+.sort-option:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.sort-option.active {
+    background: rgba(255, 255, 255, 0.05);
+    color: #fff;
+    font-weight: 600;
 }
