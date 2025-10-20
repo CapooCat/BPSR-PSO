@@ -4,7 +4,7 @@ body {
     height: 100%;
     margin: 0;
     padding: 0;
-    font-family: 'Roboto Condensed', sans-serif;
+    font-family: 'Roboto', sans-serif;
     background-color: transparent;
     user-select: none;
     color: #e0e0e0;
@@ -14,8 +14,28 @@ body {
     -webkit-font-smoothing: antialiased;
 }
 
+::-webkit-scrollbar {
+    width: 6px; /* thin vertical bar */
+    height: 6px; /* thin horizontal bar */
+}
+
+::-webkit-scrollbar-track {
+    background: transparent; /* hide track */
+}
+
+::-webkit-scrollbar-thumb {
+    transition: 0.3s;
+    background-color: #888; /* color of the thumb */
+    border-radius: 3px; /* round edges */
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background-color: #555; /* darker on hover */
+    cursor: pointer; /* pointer cursor */
+}
+
 :root {
-    --main-bg-opacity: 0.80;
+    --main-bg-opacity: 0.8;
 }
 
 #app-wrapper {
@@ -32,9 +52,9 @@ body {
     display: flex;
     flex-direction: column;
     height: 100%;
+    width: 100%;
     box-sizing: border-box;
     border-radius: 12px;
-    overflow: hidden;
     background: rgba(48, 51, 53, var(--main-bg-opacity));
     border: 1px solid rgba(255, 255, 255, 0.1);
     backdrop-filter: blur(10px);
@@ -63,7 +83,7 @@ body {
 }
 
 .app-title {
-    font-size: 16px;
+    font-size: 14px;
     font-weight: 700;
     color: #fff;
     white-space: nowrap;
@@ -93,6 +113,7 @@ body {
     border-radius: 6px;
     font-size: 11px;
     cursor: pointer;
+    min-width: 36px;
     transition:
         background-color 0.2s ease,
         transform 0.1s ease;
@@ -100,10 +121,6 @@ body {
 
 .button-group button:hover {
     background: rgba(255, 255, 255, 0.2);
-    transform: translateY(-1px);
-}
-.button-group button:active {
-    transform: translateY(0);
 }
 .button-group button.disabled {
     opacity: 0.5;
@@ -287,8 +304,8 @@ body {
 
 .help-container {
     height: 100%;
-    width: 100%;
     padding: 0px 8px;
+    overflow-y: auto;
 }
 
 .help-container h2,
@@ -411,7 +428,6 @@ body {
     -webkit-app-region: no-drag;
     font-size: 11px;
     font-weight: normal;
-    padding: 4px 8px;
     background: rgba(255, 255, 255, 0.1);
     color: #fff;
     border: 1px solid rgba(255, 255, 255, 0.2);
@@ -425,16 +441,13 @@ body {
     align-items: center;
     justify-content: space-between;
     gap: 6px;
+    padding: 4px 10px;
+    line-height: 16px;
     min-width: 85px;
 }
 
 .sort-select:hover {
     background: rgba(255, 255, 255, 0.2);
-    transform: translateY(-1px);
-}
-
-.sort-select:active {
-    transform: translateY(0);
 }
 
 .sort-select:focus {

@@ -217,7 +217,7 @@ async function clearData() {
 
 function togglePause() {
     isPaused = !isPaused;
-    pauseButton.innerText = isPaused ? 'Resume' : 'Pause';
+    pauseButton.innerText = isPaused ? '▶' : '⏸';
     showServerStatus(isPaused ? 'paused' : 'connected');
 }
 
