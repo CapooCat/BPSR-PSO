@@ -28,12 +28,16 @@ const columnsContainer = document.getElementById('columnsContainer');
 const settingsContainer = document.getElementById('settingsContainer');
 const helpContainer = document.getElementById('helpContainer');
 const passthroughTitle = document.getElementById('passthroughTitle');
+const sortButton = document.getElementById('sortButton');
+const sortDropdown = document.getElementById('sortDropdown');
+const sortText = document.getElementById('sortText');
+const sortOptions = document.querySelectorAll('.sort-option');
 const pauseButton = document.getElementById('pauseButton');
 const clearButton = document.getElementById('clearButton');
 const helpButton = document.getElementById('helpButton');
 const settingsButton = document.getElementById('settingsButton');
 const closeButton = document.getElementById('closeButton');
-const allButtons = [clearButton, pauseButton, helpButton, settingsButton, closeButton];
+const allButtons = [sortButton, clearButton, pauseButton, helpButton, settingsButton, closeButton];
 const serverStatus = document.getElementById('serverStatus');
 const opacitySlider = document.getElementById('opacitySlider');
 const classFilterButton = document.getElementById('classFilterButton');
@@ -336,12 +340,6 @@ document.addEventListener('DOMContentLoaded', () => {
     opacitySlider.addEventListener('input', (event) => {
         setBackgroundOpacity(event.target.value);
     });
-
-    // Custom sort dropdown
-    const sortButton = document.getElementById('sortButton');
-    const sortDropdown = document.getElementById('sortDropdown');
-    const sortText = document.getElementById('sortText');
-    const sortOptions = document.querySelectorAll('.sort-option');
 
     if (sortButton && sortDropdown) {
         sortButton.addEventListener('click', (e) => {
