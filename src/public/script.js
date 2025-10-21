@@ -28,12 +28,16 @@ const columnsContainer = document.getElementById('columnsContainer');
 const settingsContainer = document.getElementById('settingsContainer');
 const helpContainer = document.getElementById('helpContainer');
 const passthroughTitle = document.getElementById('passthroughTitle');
+const sortButton = document.getElementById('sortButton');
+const sortDropdown = document.getElementById('sortDropdown');
+const sortText = document.getElementById('sortText');
+const sortOptions = document.querySelectorAll('.sort-option');
 const pauseButton = document.getElementById('pauseButton');
 const clearButton = document.getElementById('clearButton');
 const helpButton = document.getElementById('helpButton');
 const settingsButton = document.getElementById('settingsButton');
 const closeButton = document.getElementById('closeButton');
-const allButtons = [clearButton, pauseButton, helpButton, settingsButton, closeButton];
+const allButtons = [sortButton, clearButton, pauseButton, helpButton, settingsButton, closeButton];
 const serverStatus = document.getElementById('serverStatus');
 const opacitySlider = document.getElementById('opacitySlider');
 const classFilterButton = document.getElementById('classFilterButton');
@@ -47,6 +51,8 @@ let currentMode = 'damage';
 let isPaused = false;
 let selectedClasses = new Set(['all']);
 let socket = null;
+let rafPending = false;
+let hasDataChanged = false;
 let isWebSocketConnected = false;
 let lastWebSocketMessage = Date.now();
 const WEBSOCKET_RECONNECT_INTERVAL = 5000;
@@ -78,7 +84,7 @@ function sortUsers(users, mode) {
 }
 
 function renderDataList(users) {
-    columnsContainer.innerHTML = '';
+    columnsContainer.replaceChildren();
 
     let filteredUsers = users;
     if (!selectedClasses.has('all') && selectedClasses.size > 0) {
@@ -92,6 +98,8 @@ function renderDataList(users) {
     const totalDamageOverall = filteredUsers.reduce((sum, user) => sum + user.total_damage.total, 0);
     const totalHealingOverall = filteredUsers.reduce((sum, user) => sum + user.total_healing.total, 0);
     sortUsers(filteredUsers, currentMode);
+
+    const fragment = document.createDocumentFragment();
 
     filteredUsers.forEach((user, index) => {
         if (!userColors[user.id]) {
@@ -110,8 +118,17 @@ function renderDataList(users) {
         const professionString = user.profession ? user.profession.trim() : '';
         if (professionString) {
             const mainProfession = professionString.split('(')[0].trim();
-            const iconFileName = mainProfession.toLowerCase().replace(/ /g, '_') + '.png';
-            classIconHtml = `<img src="assets/${iconFileName}" class="class-icon" alt="${mainProfession}" onerror="this.style.display='none'">`;
+
+            if (mainProfession !== '...' && mainProfession.length > 1 && !/^\.+$/.test(mainProfession)) {
+                const iconFileName = mainProfession.toLowerCase().replace(/ /g, '_') + '.png';
+
+                if (!window.loggedProfessions) window.loggedProfessions = new Set();
+                if (!window.loggedProfessions.has(mainProfession)) {
+                    window.loggedProfessions.add(mainProfession);
+                }
+
+                classIconHtml = `<img src="assets/${iconFileName}" class="class-icon" alt="${mainProfession}" onerror="this.style.display='none'">`;
+            }
         }
 
         let subBarHtml = '';
@@ -138,8 +155,11 @@ function renderDataList(users) {
             </div>
             ${subBarHtml}
         `;
-        columnsContainer.appendChild(item);
+
+        fragment.appendChild(item);
     });
+
+    columnsContainer.appendChild(fragment);
 }
 
 function updateAll() {
@@ -158,11 +178,7 @@ function processDataUpdate(data) {
         const newUser = data.user[userId];
         const existingUser = allUsers[userId] || {};
 
-        const updatedUser = {
-            ...existingUser,
-            ...newUser,
-            id: userId,
-        };
+        const updatedUser = Object.assign({}, existingUser, newUser, { id: userId });
 
         const hasNewValidName = newUser.name && typeof newUser.name === 'string' && newUser.name !== '未知';
         if (hasNewValidName) {
@@ -186,9 +202,17 @@ function processDataUpdate(data) {
         }
 
         allUsers[userId] = updatedUser;
+        hasDataChanged = true;
     }
 
-    updateAll();
+    if (!rafPending && hasDataChanged) {
+        rafPending = true;
+        requestAnimationFrame(() => {
+            updateAll();
+            rafPending = false;
+            hasDataChanged = false;
+        });
+    }
 }
 
 async function clearData() {
@@ -236,7 +260,10 @@ function getServerStatus() {
 }
 
 function connectWebSocket() {
-    socket = io(`ws://${SERVER_URL}`);
+    socket = io(`ws://${SERVER_URL}`, {
+        transports: ['websocket'],
+        upgrade: false,
+    });
 
     socket.on('connect', () => {
         isWebSocketConnected = true;
@@ -336,12 +363,6 @@ document.addEventListener('DOMContentLoaded', () => {
     opacitySlider.addEventListener('input', (event) => {
         setBackgroundOpacity(event.target.value);
     });
-
-    // Custom sort dropdown
-    const sortButton = document.getElementById('sortButton');
-    const sortDropdown = document.getElementById('sortDropdown');
-    const sortText = document.getElementById('sortText');
-    const sortOptions = document.querySelectorAll('.sort-option');
 
     if (sortButton && sortDropdown) {
         sortButton.addEventListener('click', (e) => {

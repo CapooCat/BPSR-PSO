@@ -443,7 +443,7 @@ body {
     gap: 6px;
     padding: 4px 10px;
     line-height: 16px;
-    min-width: 85px;
+    width: 85px;
 }
 
 .sort-select:hover {
