@@ -28,8 +28,9 @@ const columnsContainer = document.getElementById('columnsContainer');
 const settingsContainer = document.getElementById('settingsContainer');
 const helpContainer = document.getElementById('helpContainer');
 const passthroughTitle = document.getElementById('passthroughTitle');
-const sortButton = document.getElementById('sortButton');
-const sortDropdown = document.getElementById('sortDropdown');
+// const sortButton = document.getElementById('sortButton');
+// const sortDropdown = document.getElementById('sortDropdown');
+const sortSelect = document.getElementById('sortSelect');
 const sortText = document.getElementById('sortText');
 const sortOptions = document.querySelectorAll('.sort-option');
 const pauseButton = document.getElementById('pauseButton');
@@ -37,7 +38,7 @@ const clearButton = document.getElementById('clearButton');
 const helpButton = document.getElementById('helpButton');
 const settingsButton = document.getElementById('settingsButton');
 const closeButton = document.getElementById('closeButton');
-const allButtons = [sortButton, clearButton, pauseButton, helpButton, settingsButton, closeButton];
+const allButtons = [sortSelect, clearButton, pauseButton, helpButton, settingsButton, closeButton];
 const serverStatus = document.getElementById('serverStatus');
 const opacitySlider = document.getElementById('opacitySlider');
 const classFilterButton = document.getElementById('classFilterButton');
@@ -364,35 +365,41 @@ document.addEventListener('DOMContentLoaded', () => {
         setBackgroundOpacity(event.target.value);
     });
 
-    if (sortButton && sortDropdown) {
-        sortButton.addEventListener('click', (e) => {
-            e.stopPropagation();
-            sortDropdown.classList.toggle('hidden');
-            sortButton.classList.toggle('open');
+    if (sortSelect)
+        sortSelect.addEventListener('change', (e) => {
+            currentMode = e.target.value;
+            updateAll();
         });
 
-        sortOptions.forEach((option) => {
-            option.addEventListener('click', () => {
-                const value = option.getAttribute('data-value');
-                currentMode = value;
-                sortText.textContent = option.textContent;
+    // if (sortButton && sortDropdown) {
+    //     sortButton.addEventListener('click', (e) => {
+    //         e.stopPropagation();
+    //         sortDropdown.classList.toggle('hidden');
+    //         sortButton.classList.toggle('open');
+    //     });
 
-                sortOptions.forEach((opt) => opt.classList.remove('active'));
-                option.classList.add('active');
+    //     sortOptions.forEach((option) => {
+    //         option.addEventListener('click', () => {
+    //             const value = option.getAttribute('data-value');
+    //             currentMode = value;
+    //             sortText.textContent = option.textContent;
 
-                sortDropdown.classList.add('hidden');
-                sortButton.classList.remove('open');
-                updateAll();
-            });
-        });
+    //             sortOptions.forEach((opt) => opt.classList.remove('active'));
+    //             option.classList.add('active');
 
-        document.addEventListener('click', (e) => {
-            if (!sortButton.contains(e.target) && !sortDropdown.contains(e.target)) {
-                sortDropdown.classList.add('hidden');
-                sortButton.classList.remove('open');
-            }
-        });
-    }
+    //             sortDropdown.classList.add('hidden');
+    //             sortButton.classList.remove('open');
+    //             updateAll();
+    //         });
+    //     });
+
+    //     document.addEventListener('click', (e) => {
+    //         if (!sortButton.contains(e.target) && !sortDropdown.contains(e.target)) {
+    //             sortDropdown.classList.add('hidden');
+    //             sortButton.classList.remove('open');
+    //         }
+    //     });
+    // }
 
     // Toggle class filter dropdown
     if (classFilterButton) {

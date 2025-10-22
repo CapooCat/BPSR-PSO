@@ -8,6 +8,7 @@
             href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@400;700&display=swap"
             rel="stylesheet"
         />
+        <link rel="stylesheet" href="components/select/style.css" />
         <link rel="stylesheet" href="style.css" />
         <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
     </head>
@@ -19,8 +20,17 @@
                         <div id="serverStatus" class="status-indicator"></div>
                         <span class="app-title">BPSR-PSO</span>
                     </div>
-                    <div class="button-group">
-                        <div class="custom-sort-select">
+
+                    <div class="no-drag-zone" style="display: flex; gap: 8px">
+                        <select id="sortSelect" name="sortSelect" data-select-custom>
+                            <option value="damage" selected>Damage</option>
+                            <option value="healing">Healing</option>
+                            <option value="dps">DPS</option>
+                            <option value="hps">HPS</option>
+                        </select>
+
+                        <div class="button-group">
+                            <!-- <div class="custom-sort-select">
                             <button type="button" id="sortButton" class="sort-select">
                                 <span id="sortText">Damage</span>
                                 <span class="dropdown-arrow">▼</span>
@@ -31,13 +41,15 @@
                                 <div class="sort-option" data-value="dps">DPS</div>
                                 <div class="sort-option" data-value="hps">HPS</div>
                             </div>
+                        </div> -->
+
+                            <button id="clearButton" onclick="clearData()" title="Clear Data">🗑️</button>
+                            <button id="pauseButton" onclick="togglePause()" title="Pause/Resume">⏸</button>
+                            <button id="helpButton" onclick="toggleHelp()" title="Help">❓</button>
+                            <button id="settingsButton" onclick="toggleSettings()" title="Settings">⚙️</button>
+                            <button id="closeButton" onclick="closeClient()" title="Close Client">X</button>
+                            <span id="passthroughTitle" class="passthrough-title hidden"> Passthrough Enabled </span>
                         </div>
-                        <button id="clearButton" onclick="clearData()" title="Clear Data">🗑️</button>
-                        <button id="pauseButton" onclick="togglePause()" title="Pause/Resume">⏸</button>
-                        <button id="helpButton" onclick="toggleHelp()" title="Help">❓</button>
-                        <button id="settingsButton" onclick="toggleSettings()" title="Settings">⚙️</button>
-                        <button id="closeButton" onclick="closeClient()" title="Close Client">X</button>
-                        <span id="passthroughTitle" class="passthrough-title hidden"> Passthrough Enabled </span>
                     </div>
                 </div>
                 <div id="columnsContainer" class="columns-container"></div>
@@ -46,6 +58,7 @@
                         <label for="opacitySlider">Background Opacity</label>
                         <input type="range" id="opacitySlider" min="0" max="1" step="0.05" value="0.80" />
                     </div>
+
                     <div class="settings-option">
                         <label for="classFilterButton">Filter by Class:</label>
                         <div class="custom-multiselect">
@@ -131,5 +144,6 @@
             </div>
         </div>
         <script src="script.js"></script>
+        <script src="components/select/index.js"></script>
     </body>
 </html>

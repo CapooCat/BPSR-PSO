@@ -98,6 +98,10 @@ body {
     text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.7);
 }
 
+.no-drag-zone {
+    -webkit-app-region: no-drag;
+}
+
 .button-group {
     -webkit-app-region: no-drag;
     display: flex;
