@@ -16,12 +16,13 @@ function getNextColorShades() {
     const h = colorHues[colorIndex];
     colorIndex = (colorIndex + 1) % colorHues.length;
     const s = 90;
-    const l_dps = 30;
-    const l_hps = 20;
+    const l_main = 30;
+    const l_sub = 20;
 
-    const dpsColor = `hsl(${h}, ${s}%, ${l_dps}%)`;
-    const hpsColor = `hsl(${h}, ${s}%, ${l_hps}%)`;
-    return { dps: dpsColor, hps: hpsColor };
+    const mainColor = `hsl(${h}, ${s}%, ${l_main}%)`;
+    const subColor = `hsl(${h}, ${s}%, ${l_sub}%)`;
+
+    return { main: mainColor, sub: subColor };
 }
 
 const columnsContainer = document.getElementById('columnsContainer');
@@ -77,6 +78,8 @@ function sortUsers(users, mode) {
             return users.sort(
                 (a, b) => b.total_healing.total - a.total_healing.total || b.total_damage.total - a.total_damage.total
             );
+        case 'taken':
+            return users.sort((a, b) => b.taken_damage - a.taken_damage || b.total_damage.total - a.total_damage.total);
         case 'dps':
             return users.sort((a, b) => b.total_dps - a.total_dps || b.total_hps - a.total_hps);
         case 'hps':
@@ -98,6 +101,7 @@ function renderDataList(users) {
 
     const totalDamageOverall = filteredUsers.reduce((sum, user) => sum + user.total_damage.total, 0);
     const totalHealingOverall = filteredUsers.reduce((sum, user) => sum + user.total_healing.total, 0);
+    const totalDamageTakenOverall = filteredUsers.reduce((sum, user) => sum + (user.taken_damage || 0), 0);
     sortUsers(filteredUsers, currentMode);
 
     const fragment = document.createDocumentFragment();
@@ -112,6 +116,8 @@ function renderDataList(users) {
         item.className = 'data-item';
         const damagePercent = totalDamageOverall > 0 ? (user.total_damage.total / totalDamageOverall) * 100 : 0;
         const healingPercent = totalHealingOverall > 0 ? (user.total_healing.total / totalHealingOverall) * 100 : 0;
+        const damageTakenPercent =
+            totalDamageTakenOverall > 0 ? ((user.taken_damage || 0) / totalDamageTakenOverall) * 100 : 0;
 
         const displayName = user.fightPoint ? `${user.name} (${user.fightPoint})` : user.name;
 
@@ -122,36 +128,108 @@ function renderDataList(users) {
 
             if (mainProfession !== '...' && mainProfession.length > 1 && !/^\.+$/.test(mainProfession)) {
                 const iconFileName = mainProfession.toLowerCase().replace(/ /g, '_') + '.png';
-
-                if (!window.loggedProfessions) window.loggedProfessions = new Set();
-                if (!window.loggedProfessions.has(mainProfession)) {
-                    window.loggedProfessions.add(mainProfession);
-                }
-
                 classIconHtml = `<img src="assets/${iconFileName}" class="class-icon" alt="${mainProfession}" onerror="this.style.display='none'">`;
             }
         }
 
+        let mainBarContent, mainBarPercent, mainBarColor;
+
+        const hasHealing = user.total_healing.total > 0 || user.total_hps > 0;
+        const hasDamageTaken = (user.taken_damage || 0) > 0;
+        const hasDamage = user.total_damage.total > 0 || user.total_dps > 0;
+
+        if (currentMode === 'healing' || currentMode === 'hps') {
+            mainBarContent = `${formatNumber(user.total_healing.total)} (${formatNumber(user.total_hps)} HPS, ${healingPercent.toFixed(1)}%)`;
+            mainBarPercent = healingPercent;
+            mainBarColor = colors.main;
+        } else if (currentMode === 'taken') {
+            mainBarContent = `${formatNumber(user.taken_damage)} (${damageTakenPercent.toFixed(1)}%)`;
+            mainBarPercent = damageTakenPercent;
+            mainBarColor = colors.main;
+        } else {
+            mainBarContent = `${formatNumber(user.total_damage.total)} (${formatNumber(user.total_dps)} DPS, ${damagePercent.toFixed(1)}%)`;
+            mainBarPercent = damagePercent;
+            mainBarColor = colors.main;
+        }
+
         let subBarHtml = '';
-        if (user.total_healing.total > 0 || user.total_hps > 0) {
-            subBarHtml = `
+
+        if (currentMode === 'healing' || currentMode === 'hps') {
+            if (hasDamage) {
+                subBarHtml += `
                 <div class="sub-bar">
-                    <div class="hps-bar-fill" style="width: ${healingPercent}%; background-color: ${colors.hps};"></div>
-                    <div class="hps-stats">
-                       ${formatNumber(user.total_healing.total)} (${formatNumber(user.total_hps)} HPS, ${healingPercent.toFixed(1)}%)
+                    <div class="stats-bar-fill" style="width: ${damagePercent}%; background-color: ${colors.sub};"></div>
+                    <div class="sub-bar-text">
+                        <strong>DMG: ${formatNumber(user.total_damage.total)} (${formatNumber(user.total_dps)} DPS, ${damagePercent.toFixed(1)}%)</strong>
                     </div>
                 </div>
-            `;
+                `;
+            }
+
+            if (hasDamageTaken) {
+                subBarHtml += `
+                <div class="sub-bar">
+                    <div class="stats-bar-fill" style="width: ${damageTakenPercent}%; background-color: ${colors.sub};"></div>
+                    <div class="sub-bar-text">
+                        <strong>DMG Taken: ${formatNumber(user.taken_damage)} (${damageTakenPercent.toFixed(1)}%)</strong>
+                    </div>
+                </div>
+                `;
+            }
+        } else if (currentMode === 'taken') {
+            if (hasDamage) {
+                subBarHtml += `
+                <div class="sub-bar">
+                    <div class="stats-bar-fill" style="width: ${damagePercent}%; background-color: ${colors.sub};"></div>
+                    <div class="sub-bar-text">
+                        <strong>DMG: ${formatNumber(user.total_damage.total)} (${formatNumber(user.total_dps)} DPS, ${damagePercent.toFixed(1)}%)</strong>
+                    </div>
+                </div>
+                `;
+            }
+
+            if (hasHealing) {
+                subBarHtml += `
+                <div class="sub-bar">
+                    <div class="stats-bar-fill" style="width: ${healingPercent}%; background-color: ${colors.sub};"></div>
+                    <div class="sub-bar-text">
+                        <strong>Heal: ${formatNumber(user.total_healing.total)} (${formatNumber(user.total_hps)} HPS, ${healingPercent.toFixed(1)}%)</strong>
+                    </div>
+                </div>
+                `;
+            }
+        } else {
+            if (hasDamageTaken) {
+                subBarHtml += `
+                <div class="sub-bar">
+                    <div class="stats-bar-fill" style="width: ${damageTakenPercent}%; background-color: ${colors.sub};"></div>
+                    <div class="sub-bar-text">
+                        <strong>DMG Taken: ${formatNumber(user.taken_damage)} (${damageTakenPercent.toFixed(1)}%)</strong>
+                    </div>
+                </div>
+                `;
+            }
+
+            if (hasHealing) {
+                subBarHtml += `
+                <div class="sub-bar">
+                    <div class="stats-bar-fill" style="width: ${healingPercent}%; background-color: ${colors.sub};"></div>
+                    <div class="sub-bar-text">
+                        <strong>Heal: ${formatNumber(user.total_healing.total)} (${formatNumber(user.total_hps)} HPS, ${healingPercent.toFixed(1)}%)</strong>
+                    </div>
+                </div>
+                `;
+            }
         }
 
         item.innerHTML = `
             <div class="main-bar">
-                <div class="dps-bar-fill" style="width: ${damagePercent}%; background-color: ${colors.dps};"></div>
+                <div class="stats-bar-fill" style="width: ${mainBarPercent}%; background-color: ${mainBarColor};"></div>
                 <div class="content">
                     <span class="rank">${index + 1}.</span>
                     ${classIconHtml}
                     <span class="name">${displayName}</span>
-                    <span class="stats">${formatNumber(user.total_damage.total)} (${formatNumber(user.total_dps)} DPS, ${damagePercent.toFixed(1)}%)</span>
+                    <span class="stats">${mainBarContent}</span>
                 </div>
             </div>
             ${subBarHtml}
