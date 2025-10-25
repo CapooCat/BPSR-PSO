@@ -398,7 +398,8 @@ body {
     height: 100%;
     opacity: 0.6;
     z-index: 1;
-    transition: width 0.3s ease;
+    transition: width 1s ease;
+    will-change: width;
 }
 
 .custom-sort-select {
