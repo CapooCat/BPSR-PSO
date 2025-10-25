@@ -332,7 +332,9 @@ async function clearData() {
 
 function togglePause() {
     isPaused = !isPaused;
-    pauseButton.innerText = isPaused ? '▶' : '⏸';
+    pauseButton.innerHTML = isPaused
+        ? '<img class="icon-button" src="/assets/caret-right.svg" />'
+        : '<img class="icon-button" src="/assets/player-pause.svg" />';
     showServerStatus(isPaused ? 'paused' : 'connected');
 }
 

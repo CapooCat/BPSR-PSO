@@ -19,12 +19,12 @@ class Window {
     _window = null;
     config = {};
     defaultConfig = {
-        width: 300,
-        height: 300,
+        width: 450,
+        height: 500,
         x: undefined,
         y: undefined,
         passthrough: false,
-        lastHeight: 300, // Default restore height for minimize feature
+        lastHeight: 500, // Default restore height for minimize feature
     };
 
     constructor() {
@@ -80,7 +80,7 @@ class Window {
             height: this.config.height,
             x: this.config.x,
             y: this.config.y,
-            minWidth: 430,
+            minWidth: 450,
             minHeight: 42,
             transparent: true,
             frame: false,

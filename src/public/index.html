@@ -22,7 +22,7 @@
                     </div>
 
                     <div class="no-drag-zone" id="control-tool" style="display: flex; gap: 8px">
-                        <select id="sortSelect" name="sortSelect" data-select-custom>
+                        <select id="sortSelect" name="sortSelect" title="Sorter" data-select-custom>
                             <option value="damage">Damage</option>
                             <option value="healing">Healing</option>
                             <option value="dps">DPS</option>
@@ -30,11 +30,25 @@
                         </select>
 
                         <div class="button-group">
-                            <button id="clearButton" onclick="clearData()" title="Clear Data">🗑️</button>
-                            <button id="pauseButton" onclick="togglePause()" title="Pause/Resume">⏸</button>
-                            <button id="helpButton" onclick="toggleHelp()" title="Help">❓</button>
-                            <button id="settingsButton" onclick="toggleSettings()" title="Settings">⚙️</button>
-                            <button id="closeButton" onclick="closeClient()" title="Close Client">X</button>
+                            <button id="clearButton" onclick="clearData()" title="Clear Data">
+                                <img class="icon-button" src="/assets/trash.svg" />
+                            </button>
+
+                            <button id="pauseButton" onclick="togglePause()" title="Pause/Resume">
+                                <img class="icon-button" src="/assets/player-pause.svg" />
+                            </button>
+
+                            <button id="helpButton" onclick="toggleHelp()" title="Help">
+                                <img class="icon-button" src="/assets/question-mark.svg" />
+                            </button>
+
+                            <button id="settingsButton" onclick="toggleSettings()" title="Settings">
+                                <img class="icon-button" src="/assets/settings.svg" />
+                            </button>
+
+                            <button id="closeButton" onclick="closeClient()" title="Close Client">
+                                <img class="icon-button" src="/assets/x.svg" />
+                            </button>
                         </div>
                     </div>
 
