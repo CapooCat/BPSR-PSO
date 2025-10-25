@@ -20,6 +20,11 @@ const FRAGMENT_TIMEOUT = 30_000; // ms
 const IF_CHECK_INTERVAL_MS = 3_000; // ms
 const IF_SWITCH_DEBOUNCE_POLLS = 2;
 
+// Link type constants
+const LINK_TYPE_ETHERNET = 'ETHERNET';
+const LINK_TYPE_RAW = 'RAW';
+const LINK_TYPE_NULL = 'NULL';
+
 // ===== Helpers =====
 const clearDataOnServerChange = () => {
     userDataManager.refreshEnemyCache();
@@ -79,6 +84,9 @@ export class PacketInterceptor {
                 };
 
                 const fragmentIpCache = new Map();
+
+                // Store current link type
+                let currentLinkType = null;
 
                 // ======== DO NOT CHANGE: getTCPPacket ========
                 const getTCPPacket = (frameBuffer, ethOffset) => {
@@ -147,18 +155,28 @@ export class PacketInterceptor {
                     const instance = new Cap();
                     const deviceName = devices[deviceNum].name;
                     const linkType = instance.open(deviceName, FILTER, RINGBUF_SIZE, snapBuffer);
-                    if (linkType !== 'ETHERNET') {
-                        logger.error('The device seems to be WRONG! Please check the device! Device type: ' + linkType);
+
+                    // Accept both ETHERNET and RAW link types
+                    const supportedTypes = [LINK_TYPE_ETHERNET, LINK_TYPE_RAW, LINK_TYPE_NULL];
+                    if (!supportedTypes.includes(linkType)) {
+                        logger.error(
+                            `Unsupported device link type: ${linkType}. Supported: ${supportedTypes.join(', ')}`
+                        );
+                        throw new Error(`Unsupported link type: ${linkType}`);
                     }
+
+                    currentLinkType = linkType;
+                    logger.info(`Device link type: ${linkType}`);
+
                     instance.setMinBytes && instance.setMinBytes(0);
                     attachPacketListener(instance);
                     logger.info(
                         `
-                        =====================================================================================
+                       =====================================================================================
                         
-                        Capture opened on device #${deviceNum}: ${devices[deviceNum].description || deviceName}
+                       Capture opened on device #${deviceNum}: ${devices[deviceNum].description || deviceName}
                         
-                        =====================================================================================
+                       =====================================================================================
                         `
                     );
                     return instance;
@@ -203,15 +221,27 @@ export class PacketInterceptor {
                 // — Initial open —
                 capInstance = openCaptureOnDevice(currentDeviceNum);
 
-                // ======== DO NOT CHANGE: processEthPacket ========
+                // ======== MODIFIED: processEthPacket with RAW support ========
                 const processEthPacket = async (frameBuffer) => {
-                    const ethPacket = decoders.Ethernet(frameBuffer);
-                    if (ethPacket.info.type !== PROTOCOL.ETHERNET.IPV4) return;
+                    let ipOffset = 0;
 
-                    const ipPacket = decoders.IPV4(frameBuffer, ethPacket.offset);
+                    // Determine IP offset based on link type
+                    if (currentLinkType === LINK_TYPE_ETHERNET) {
+                        const ethPacket = decoders.Ethernet(frameBuffer);
+                        if (ethPacket.info.type !== PROTOCOL.ETHERNET.IPV4) return;
+                        ipOffset = ethPacket.offset;
+                    } else if (currentLinkType === LINK_TYPE_RAW) {
+                        // RAW/TUN devices have no Ethernet header, start at 0
+                        ipOffset = 0;
+                    } else if (currentLinkType === LINK_TYPE_NULL) {
+                        // NULL/Loopback typically has 4-byte header
+                        ipOffset = 4;
+                    }
+
+                    const ipPacket = decoders.IPV4(frameBuffer, ipOffset);
                     const { srcaddr, dstaddr } = ipPacket.info;
 
-                    const tcpBuffer = getTCPPacket(frameBuffer, ethPacket.offset);
+                    const tcpBuffer = getTCPPacket(frameBuffer, ipOffset);
                     if (tcpBuffer === null) return;
 
                     const tcpPacket = decoders.TCP(tcpBuffer);
