@@ -33,4 +33,6 @@
 [data-popup-trigger] {
     user-select: none;
     cursor: pointer;
+    width: fit-content;
+    height: fit-content;
 }
