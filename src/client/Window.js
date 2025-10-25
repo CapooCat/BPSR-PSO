@@ -81,7 +81,7 @@ class Window {
             x: this.config.x,
             y: this.config.y,
             minWidth: 450,
-            minHeight: 42,
+            minHeight: 450,
             transparent: true,
             frame: false,
             title: 'BPSR-PSO',
