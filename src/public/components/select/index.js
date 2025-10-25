@@ -454,7 +454,13 @@
     const init = (root = document) => {
         root.querySelectorAll('select[data-select-custom]:not(.cs-initialized)').forEach((sel) => {
             sel.classList.add('cs-initialized');
-            new CustomSelect(sel);
+            const selectDOM = new CustomSelect(sel);
+
+            // NEW: Close on Electron window blur / page hidden (Option A)
+            window.addEventListener('blur', () => selectDOM.close());
+            document.addEventListener('visibilitychange', () => {
+                if (document.hidden) selectDOM.close();
+            });
         });
     };
     init();

@@ -155,9 +155,29 @@
         },
     };
 
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', () => PopupManager.init());
-    } else {
+    // if (document.readyState === 'loading') {
+    //     document.addEventListener('DOMContentLoaded', () => PopupManager.init());
+    // } else {
+    //     PopupManager.init();
+    // }
+
+    window.PopupManager = PopupManager;
+
+    const boot = () => {
         PopupManager.init();
+
+        // ✅ Close when the Electron window loses focus
+        window.addEventListener('blur', () => PopupManager.closeAll());
+
+        // ✅ Close when the page becomes hidden (window deactivated/minimized, etc.)
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) PopupManager.closeAll();
+        });
+    };
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', boot);
+    } else {
+        boot();
     }
 })();

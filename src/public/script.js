@@ -587,7 +587,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // }
 
     // Listen for the passthrough toggle event from the main process
-    window.electronAPI.onTogglePassthrough((isIgnoring) => {
+    window.electronAPI?.onTogglePassthrough((isIgnoring) => {
         if (isIgnoring) {
             controlTool.classList.add('hidden');
             controlPassthrough.classList.remove('hidden');
@@ -600,6 +600,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
 window.clearData = clearData;
 window.togglePause = togglePause;
-window.toggleSettings = toggleSettings;
+// window.toggleSettings = toggleSettings;
 window.closeClient = closeClient;
-window.toggleHelp = toggleHelp;
+// window.toggleHelp = toggleHelp;
