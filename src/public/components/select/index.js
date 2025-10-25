@@ -58,7 +58,18 @@
                 li.className = 'cs-option';
                 li.setAttribute('role', 'option');
                 li.dataset.value = opt.value;
-                li.textContent = opt.text;
+                // li.textContent = opt.text;
+
+                if (opt.dataset.img) {
+                    const img = document.createElement('img');
+                    img.classList.add('option-image');
+                    img.src = opt.dataset.img;
+                    img.alt = '';
+                    li.appendChild(img);
+                }
+
+                li.appendChild(document.createTextNode(opt.text));
+
                 if (opt.disabled) li.setAttribute('aria-disabled', 'true');
                 this.list.appendChild(li);
                 this.optionEls.push(li);
@@ -158,8 +169,31 @@
                 else if (selectedOpts.length <= 2) this.button.textContent = selectedOpts.join(', ');
                 else this.button.textContent = `${selectedOpts.length} selected`;
             } else {
-                const text = idx >= 0 ? this.select.options[idx].text : this.select.options[0]?.text || 'Select';
-                this.button.textContent = text;
+                // const text = idx >= 0 ? this.select.options[idx].text : this.select.options[0]?.text || 'Select';
+                // this.button.textContent = text;
+
+                this.button.innerHTML = '';
+                const selectedOpt = this.isMultiple ? this.select.selectedOptions[0] : this.select.options[idx];
+
+                if (selectedOpt?.dataset?.img) {
+                    const img = document.createElement('img');
+                    img.classList.add('option-image');
+                    img.src = selectedOpt.dataset.img;
+                    img.alt = '';
+                    this.button.appendChild(img);
+                }
+
+                this.button.appendChild(
+                    document.createTextNode(
+                        this.isMultiple
+                            ? selectedOpts.length === 0
+                                ? 'Select'
+                                : selectedOpts.length <= 2
+                                  ? selectedOpts.join(', ')
+                                  : `${selectedOpts.length} selected`
+                            : selectedOpt?.text || 'Select'
+                    )
+                );
             }
 
             // option rows

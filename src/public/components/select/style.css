@@ -97,6 +97,9 @@
     padding: 10px 12px;
     cursor: pointer;
     line-height: 1.2;
+    align-items: center;
+    display: flex;
+    gap: 6px;
 }
 .cs-option + .cs-option {
     position: relative;
@@ -119,8 +122,6 @@
     background: #656565;
     color: #fff;
     font-weight: 700;
-    display: flex;
-    gap: 6px;
 } /* selected */
 
 .cs-option.cs-selected::after {
@@ -138,4 +139,10 @@
 .cs-list:focus-visible {
     outline: none;
     box-shadow: var(--cs-focus);
+}
+
+.cs-option .option-image {
+    width: 18px;
+    height: 18px;
+    object-fit: contain;
 }
