@@ -9,6 +9,8 @@
             rel="stylesheet"
         />
         <link rel="stylesheet" href="components/select/style.css" />
+        <link rel="stylesheet" href="components/popup/style.css" />
+        <link rel="stylesheet" href="components/button/style.css" />
         <link rel="stylesheet" href="style.css" />
         <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
     </head>
@@ -30,23 +32,110 @@
                         </select>
 
                         <div class="button-group">
-                            <button id="clearButton" onclick="clearData()" title="Clear Data">
+                            <button data-button id="clearButton" onclick="clearData()" title="Clear Data">
                                 <img class="icon-button" src="/assets/trash.svg" />
                             </button>
 
-                            <button id="pauseButton" onclick="togglePause()" title="Pause/Resume">
+                            <button data-button id="pauseButton" onclick="togglePause()" title="Pause/Resume">
                                 <img class="icon-button" src="/assets/player-pause.svg" />
                             </button>
 
-                            <button id="helpButton" onclick="toggleHelp()" title="Help">
-                                <img class="icon-button" src="/assets/question-mark.svg" />
-                            </button>
+                            <div data-popup-trigger="helper">
+                                <button data-button title="Help">
+                                    <img class="icon-button" src="/assets/question-mark.svg" />
+                                </button>
+                            </div>
+                            <div data-popup-content="helper">
+                                <div class="help-container">
+                                    <h2>Keyboard Shortcuts</h2>
+                                    <ul>
+                                        <li>
+                                            <strong>Toggle Mouse Pass-through:</strong>
+                                            <br />
+                                            Press <code>Control+`</code> to allow mouse clicks to "pass through" this
+                                            window to the applications behind it. Press the key combination again to
+                                            restore normal mouse interaction.
+                                        </li>
+                                        <li>
+                                            <strong>Minimize Window Content:</strong>
+                                            <br />
+                                            Press <code>Control+Alt+Z</code> to minimize the content section of the
+                                            application. Press the key combination again to restore content section
+                                            size.
+                                        </li>
+                                        <li>
+                                            <strong>Resize Window:</strong>
+                                            <br />
+                                            Press <code>Control + Arrow Keys</code> to resize the application window.
+                                        </li>
+                                        <li>
+                                            <strong>Move Window:</strong>
+                                            <br />
+                                            Press <code>Control + Alt + Arrow Keys</code> to move the application
+                                            window.
+                                        </li>
+                                    </ul>
+                                    <h2>Sorting Options</h2>
+                                    <ul>
+                                        <li><strong>Damage:</strong> Sort by total damage dealt</li>
+                                        <li><strong>Healing:</strong> Sort by total healing done</li>
+                                        <li><strong>Taken:</strong> Sort by total damage taken received</li>
+                                        <li><strong>DPS:</strong> Sort by avg. damage per second</li>
+                                        <li><strong>HPS:</strong> Sort by avg. healing per second</li>
+                                    </ul>
+                                </div>
+                            </div>
 
-                            <button id="settingsButton" onclick="toggleSettings()" title="Settings">
-                                <img class="icon-button" src="/assets/settings.svg" />
-                            </button>
+                            <div data-popup-trigger="setting">
+                                <button data-button title="Settings">
+                                    <img class="icon-button" src="/assets/settings.svg" />
+                                </button>
+                            </div>
+                            <div data-popup-content="setting">
+                                <div style="display: flex; gap: 8px; flex-direction: column">
+                                    <div class="settings-option">
+                                        <label for="opacitySlider">Background Opacity</label>
+                                        <input
+                                            type="range"
+                                            id="opacitySlider"
+                                            min="0"
+                                            max="1"
+                                            step="0.05"
+                                            value="0.80"
+                                        />
+                                    </div>
 
-                            <button id="closeButton" onclick="closeClient()" title="Close Client">
+                                    <div class="settings-option">
+                                        <label for="filterSelect">Filter by Classes</label>
+                                        <select id="filterSelect" name="filterSelect" data-select-custom multiple>
+                                            <option data-img="/assets/frost_mage.png" value="Frost Mage">
+                                                Frost Mage
+                                            </option>
+                                            <option data-img="/assets/heavy_guardian.png" value="Heavy Guardian">
+                                                Heavy Guardian
+                                            </option>
+                                            <option data-img="/assets/marksman.png" value="Marksman">Marksman</option>
+                                            <option data-img="/assets/shield_knight.png" value="Shield Knight">
+                                                Shield Knight
+                                            </option>
+                                            <option data-img="/assets/soul_musician.png" value="Soul Musician">
+                                                Soul Musician
+                                            </option>
+                                            <option data-img="/assets/stormblade.png" value="Stormblade">
+                                                Storm Blade
+                                            </option>
+                                            <option data-img="/assets/verdant_oracle.png" value="Verdant Oracle">
+                                                Verdant Oracle
+                                            </option>
+                                            <option data-img="/assets/wind_knight.png" value="Wind Knight">
+                                                Wind Knight
+                                            </option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <button data-button id="closeButton" onclick="closeClient()" title="Close Client">
                                 <img class="icon-button" src="/assets/x.svg" />
                             </button>
                         </div>
@@ -57,112 +146,10 @@
                     </div>
                 </div>
                 <div id="columnsContainer" class="columns-container"></div>
-                <div id="settingsContainer" class="settings-container hidden">
-                    <div class="settings-option">
-                        <label for="opacitySlider">Background Opacity</label>
-                        <input type="range" id="opacitySlider" min="0" max="1" step="0.05" value="0.80" />
-                    </div>
-
-                    <div class="settings-option">
-                        <label for="filterSelect">Filter by Class</label>
-                        <select id="filterSelect" name="filterSelect" data-select-custom multiple>
-                            <option data-img="/assets/frost_mage.png" value="Frost Mage">Frost Mage</option>
-                            <option data-img="/assets/heavy_guardian.png" value="Heavy Guardian">Heavy Guardian</option>
-                            <option data-img="/assets/marksman.png" value="Marksman">Marksman</option>
-                            <option data-img="/assets/shield_knight.png" value="Shield Knight">Shield Knight</option>
-                            <option data-img="/assets/soul_musician.png" value="Soul Musician">Soul Musician</option>
-                            <option data-img="/assets/stormblade.png" value="Stormblade">Storm Blade</option>
-                            <option data-img="/assets/verdant_oracle.png" value="Verdant Oracle">Verdant Oracle</option>
-                            <option data-img="/assets/wind_knight.png" value="Wind Knight">Wind Knight</option>
-                        </select>
-                    </div>
-
-                    <!-- <div class="settings-option">
-                        <label for="classFilterButton">Filter by Class:</label>
-                        <div class="custom-multiselect">
-                            <button type="button" id="classFilterButton" class="multiselect-button">
-                                <span id="classFilterText">All Classes</span>
-                                <span class="dropdown-arrow">▼</span>
-                            </button>
-                            <div id="classFilterDropdown" class="multiselect-dropdown hidden">
-                                <label class="multiselect-option">
-                                    <input type="checkbox" value="all" checked data-class-filter />
-                                    <span>All Classes</span>
-                                </label>
-                                <label class="multiselect-option">
-                                    <input type="checkbox" value="Frost Mage" data-class-filter />
-                                    <span>Frost Mage</span>
-                                </label>
-                                <label class="multiselect-option">
-                                    <input type="checkbox" value="Heavy Guardian" data-class-filter />
-                                    <span>Heavy Guardian</span>
-                                </label>
-                                <label class="multiselect-option">
-                                    <input type="checkbox" value="Marksman" data-class-filter />
-                                    <span>Marksman</span>
-                                </label>
-                                <label class="multiselect-option">
-                                    <input type="checkbox" value="Shield Knight" data-class-filter />
-                                    <span>Shield Knight</span>
-                                </label>
-                                <label class="multiselect-option">
-                                    <input type="checkbox" value="Soul Musician" data-class-filter />
-                                    <span>Soul Musician</span>
-                                </label>
-                                <label class="multiselect-option">
-                                    <input type="checkbox" value="Stormblade" data-class-filter />
-                                    <span>Stormblade</span>
-                                </label>
-                                <label class="multiselect-option">
-                                    <input type="checkbox" value="Verdant Oracle" data-class-filter />
-                                    <span>Verdant Oracle</span>
-                                </label>
-                                <label class="multiselect-option">
-                                    <input type="checkbox" value="Wind Knight" data-class-filter />
-                                    <span>Wind Knight</span>
-                                </label>
-                            </div>
-                        </div>
-                    </div> -->
-                </div>
-                <div id="helpContainer" class="help-container hidden">
-                    <h2>Keyboard Shortcuts</h2>
-                    <ul>
-                        <li>
-                            <strong>Toggle Mouse Pass-through:</strong>
-                            <br />
-                            Press <code>Control+`</code> to allow mouse clicks to "pass through" this window to the
-                            applications behind it. Press the key combination again to restore normal mouse interaction.
-                        </li>
-                        <li>
-                            <strong>Minimize Window Content:</strong>
-                            <br />
-                            Press <code>Control+Alt+Z</code> to minimize the content section of the application. Press
-                            the key combination again to restore content section size.
-                        </li>
-                        <li>
-                            <strong>Resize Window:</strong>
-                            <br />
-                            Press <code>Control + Arrow Keys</code> to resize the application window.
-                        </li>
-                        <li>
-                            <strong>Move Window:</strong>
-                            <br />
-                            Press <code>Control + Alt + Arrow Keys</code> to move the application window.
-                        </li>
-                    </ul>
-                    <h2>Sorting Options</h2>
-                    <ul>
-                        <li><strong>Damage:</strong> Sort by total damage dealt</li>
-                        <li><strong>Healing:</strong> Sort by total healing done</li>
-                        <li><strong>Taken:</strong> Sort by total damage taken received</li>
-                        <li><strong>DPS:</strong> Sort by avg. damage per second</li>
-                        <li><strong>HPS:</strong> Sort by avg. healing per second</li>
-                    </ul>
-                </div>
             </div>
         </div>
         <script src="components/select/index.js"></script>
+        <script src="components/popup/index.js"></script>
         <script src="script.js"></script>
     </body>
 </html>

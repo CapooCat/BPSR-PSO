@@ -1,0 +1,27 @@
+[data-button] {
+    -webkit-app-region: no-drag;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #fff;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 11px;
+    cursor: pointer;
+    min-width: 36px;
+    transition:
+        background-color 0.2s ease,
+        transform 0.1s ease;
+}
+
+[data-button]:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+[data-button].disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    pointer-events: none;
+}

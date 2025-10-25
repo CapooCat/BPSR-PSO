@@ -1,0 +1,36 @@
+/* Base popup styling */
+[data-popup-content] {
+    position: fixed; /* JS positions it near the trigger */
+    inset: auto auto auto auto;
+    min-width: 240px;
+    max-width: min(90vw, 420px);
+    padding: 10px;
+    border-radius: 10px;
+    background: #424242;
+    color: #e7e7ea;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    z-index: 9999;
+    display: none; /* hidden by default */
+}
+
+[data-popup-content][data-open='true'] {
+    display: block;
+    animation: popup-fade 120ms ease-out;
+}
+
+@keyframes popup-fade {
+    from {
+        opacity: 0;
+        transform: translateY(-4px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Optional: make triggers unselectable and obvious */
+[data-popup-trigger] {
+    user-select: none;
+    cursor: pointer;
+}

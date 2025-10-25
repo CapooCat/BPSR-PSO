@@ -85,7 +85,6 @@ body {
     display: flex;
     align-items: center;
     gap: 10px;
-    user-select: none;
 }
 
 .app-title {
@@ -112,33 +111,6 @@ body {
     -webkit-app-region: no-drag;
     display: flex;
     gap: 8px;
-}
-
-.button-group button {
-    -webkit-app-region: no-drag;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: rgba(255, 255, 255, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    color: #fff;
-    padding: 4px 10px;
-    border-radius: 6px;
-    font-size: 11px;
-    cursor: pointer;
-    min-width: 36px;
-    transition:
-        background-color 0.2s ease,
-        transform 0.1s ease;
-}
-
-.button-group button:hover {
-    background: rgba(255, 255, 255, 0.2);
-}
-.button-group button.disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-    pointer-events: none;
 }
 
 #closeButton {
@@ -317,7 +289,8 @@ body {
 
 .help-container {
     height: 100%;
-    padding: 0px 8px;
+    max-height: 300px;
+    width: 380px;
     overflow-y: auto;
 }
 
@@ -326,6 +299,7 @@ body {
     color: #fff;
     border-bottom: 1px solid #555;
     padding-bottom: 5px;
+    margin-top: 0;
 }
 .help-container p,
 .help-container li {

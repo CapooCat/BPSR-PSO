@@ -26,7 +26,7 @@ function getNextColorShades() {
 }
 
 const columnsContainer = document.getElementById('columnsContainer');
-const settingsContainer = document.getElementById('settingsContainer');
+// const settingsContainer = document.getElementById('settingsContainer');
 const helpContainer = document.getElementById('helpContainer');
 const passthroughTitle = document.getElementById('passthroughTitle');
 const controlTool = document.getElementById('control-tool');
@@ -405,30 +405,30 @@ function initialize() {
     setInterval(checkConnection, WEBSOCKET_RECONNECT_INTERVAL);
 }
 
-function toggleSettings() {
-    const isSettingsVisible = !settingsContainer.classList.contains('hidden');
+// function toggleSettings() {
+//     const isSettingsVisible = !settingsContainer.classList.contains('hidden');
 
-    if (isSettingsVisible) {
-        settingsContainer.classList.add('hidden');
-        columnsContainer.classList.remove('hidden');
-    } else {
-        settingsContainer.classList.remove('hidden');
-        columnsContainer.classList.add('hidden');
-        helpContainer.classList.add('hidden');
-    }
-}
+//     if (isSettingsVisible) {
+//         settingsContainer.classList.add('hidden');
+//         columnsContainer.classList.remove('hidden');
+//     } else {
+//         settingsContainer.classList.remove('hidden');
+//         columnsContainer.classList.add('hidden');
+//         helpContainer.classList.add('hidden');
+//     }
+// }
 
-function toggleHelp() {
-    const isHelpVisible = !helpContainer.classList.contains('hidden');
-    if (isHelpVisible) {
-        helpContainer.classList.add('hidden');
-        columnsContainer.classList.remove('hidden');
-    } else {
-        helpContainer.classList.remove('hidden');
-        columnsContainer.classList.add('hidden');
-        settingsContainer.classList.add('hidden');
-    }
-}
+// function toggleHelp() {
+//     const isHelpVisible = !helpContainer.classList.contains('hidden');
+//     if (isHelpVisible) {
+//         helpContainer.classList.add('hidden');
+//         columnsContainer.classList.remove('hidden');
+//     } else {
+//         helpContainer.classList.remove('hidden');
+//         columnsContainer.classList.add('hidden');
+//         settingsContainer.classList.add('hidden');
+//     }
+// }
 
 function setBackgroundOpacity(value) {
     document.documentElement.style.setProperty('--main-bg-opacity', value);
