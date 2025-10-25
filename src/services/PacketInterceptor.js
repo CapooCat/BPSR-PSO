@@ -12,10 +12,22 @@ const Cap = cap.Cap;
 const decoders = cap.decoders;
 const PROTOCOL = decoders.PROTOCOL;
 
+const resolveGlobalSettings = () => {
+    if (typeof globalThis !== 'undefined' && globalThis.globalSettings) {
+        return globalThis.globalSettings;
+    }
+    if (typeof globalSettings !== 'undefined') {
+        return globalSettings;
+    }
+    return null;
+};
+
 const clearDataOnServerChange = () => {
     userDataManager.refreshEnemyCache();
+    const settings = resolveGlobalSettings();
+    const autoClearEnabled = settings ? settings.autoClearOnServerChange !== false : true;
     if (
-        !globalSettings.autoClearOnServerChange ||
+        !autoClearEnabled ||
         userDataManager.lastLogTime === 0 ||
         userDataManager.users.size === 0
     ) {
