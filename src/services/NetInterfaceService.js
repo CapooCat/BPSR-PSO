@@ -189,15 +189,15 @@ export async function findByRoute(devices) {
  * @returns {Promise<number|undefined>} The index of the default network device.
  */
 export async function findDefaultNetworkDevice(devices) {
-    console.log('Auto detecting default network interface via route table...');
+    // console.log('Auto detecting default network interface via route table...');
     try {
         const routeIndex = await findByRoute(devices);
 
-        if (routeIndex !== undefined) {
-            console.log(`Using adapter from route table: ${routeIndex} - ${devices[routeIndex].description}`);
-        } else {
-            console.log('Could not find a default network interface via route table.');
-        }
+        // if (routeIndex !== undefined) {
+        //     console.log(`Using adapter from route table: ${routeIndex} - ${devices[routeIndex].description}`);
+        // } else {
+        //     console.log('Could not find a default network interface via route table.');
+        // }
 
         return routeIndex;
     } catch (error) {
