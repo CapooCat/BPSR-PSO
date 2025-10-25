@@ -2,22 +2,22 @@
     class CustomSelect {
         constructor(select) {
             this.select = select;
+            this.isMultiple = !!select.multiple;
+            this.lastToggledIndex = null; // for Shift range
             this.build();
             this.syncFromSelect();
             this.attachEvents();
         }
 
         build() {
-            // Wrapper
+            // wrapper & move native select inside (kept for form compatibility)
             this.wrapper = document.createElement('div');
-            this.wrapper.className = 'cs-wrap';
+            this.wrapper.className = 'cs-wrap' + (this.isMultiple ? ' cs-multiple' : '');
             this.select.parentNode.insertBefore(this.wrapper, this.select);
             this.wrapper.appendChild(this.select);
-
-            // Hide native select (but keep in DOM for forms/JS)
             this.select.classList.add('cs-native-hidden');
 
-            // Button (display)
+            // button
             this.button = document.createElement('button');
             this.button.type = 'button';
             this.button.className = 'cs-button';
@@ -26,18 +26,34 @@
             this.button.setAttribute('aria-label', this.select.getAttribute('aria-label') || 'Select');
             this.wrapper.appendChild(this.button);
 
-            // Listbox
+            // listbox
             this.list = document.createElement('ul');
             this.list.className = 'cs-list';
             this.list.tabIndex = -1;
             this.list.setAttribute('role', 'listbox');
+            if (this.isMultiple) this.list.setAttribute('aria-multiselectable', 'true');
             this.list.id = `cs-${Math.random().toString(36).slice(2)}`;
             this.button.setAttribute('aria-controls', this.list.id);
             this.wrapper.appendChild(this.list);
 
-            // Options
+            // elements
             this.optionEls = [];
-            Array.from(this.select.options).forEach((opt, i) => {
+            this.selectAllEl = null;
+
+            // "Select All" (only in multiple)
+            if (this.isMultiple) {
+                this.selectAllEl = document.createElement('li');
+                this.selectAllEl.className = 'cs-option cs-select-all';
+                this.selectAllEl.setAttribute('role', 'option');
+                this.selectAllEl.dataset.value = '__all__';
+                this.selectAllEl.textContent = 'Select All';
+                this.list.appendChild(this.selectAllEl);
+                this.selectAllEl.addEventListener('click', () => this.toggleSelectAll());
+                this.selectAllEl.addEventListener('mousemove', () => this.highlightOnly(-1));
+            }
+
+            // build options
+            Array.from(this.select.options).forEach((opt) => {
                 const li = document.createElement('li');
                 li.className = 'cs-option';
                 li.setAttribute('role', 'option');
@@ -48,20 +64,22 @@
                 this.optionEls.push(li);
             });
 
-            // For roving focus
+            // roving focus: activeIndex is for REAL options (0..n-1). -1 means "Select All".
             this.activeIndex = Math.max(this.select.selectedIndex, 0);
+            if (this.isMultiple && this.activeIndex < 0) this.activeIndex = 0;
         }
 
+        // open/close/toggle
         open() {
             if (this.isOpen) return;
             this.isOpen = true;
             this.wrapper.classList.add('cs-open');
             this.button.setAttribute('aria-expanded', 'true');
             this.list.focus({ preventScroll: true });
+            this.highlightOnly(this.isMultiple ? -1 : this.activeIndex); // start at top or selected
             this.scrollActiveIntoView();
             document.addEventListener('click', this.onDocClick, { capture: true });
         }
-
         close() {
             if (!this.isOpen) return;
             this.isOpen = false;
@@ -70,62 +88,146 @@
             this.button.focus({ preventScroll: true });
             document.removeEventListener('click', this.onDocClick, { capture: true });
         }
-
         toggle() {
             this.isOpen ? this.close() : this.open();
         }
 
-        selectIndex(idx, user = true) {
+        // selection (single: set; multiple: toggle)
+        selectIndex(idx, user = true, forceState = null) {
             const opt = this.select.options[idx];
             if (!opt || opt.disabled) return;
 
-            this.select.selectedIndex = idx;
+            if (this.isMultiple) {
+                const next = forceState ?? !opt.selected;
+                opt.selected = next;
+                this.lastToggledIndex = idx;
+            } else {
+                this.select.selectedIndex = idx;
+            }
+
             this.syncFromSelect();
             if (user) this.select.dispatchEvent(new Event('change', { bubbles: true }));
         }
 
+        // Select All toggle (multiple only)
+        toggleSelectAll(forceState = null) {
+            if (!this.isMultiple) return;
+            const opts = Array.from(this.select.options).filter((o) => !o.disabled);
+            const allSelected = opts.length > 0 && opts.every((o) => o.selected);
+            const state = forceState !== null ? forceState : !allSelected;
+            opts.forEach((o) => (o.selected = state));
+            this.syncFromSelect();
+            this.select.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+
+        // Shift + click range
+        selectRange(toIdx, eventLike) {
+            if (!this.isMultiple) return;
+            const fromIdx = this.lastToggledIndex ?? this.activeIndex ?? toIdx;
+            const [start, end] = fromIdx < toIdx ? [fromIdx, toIdx] : [toIdx, fromIdx];
+            const targetState = !this.select.options[toIdx].selected;
+            for (let i = start; i <= end; i++) {
+                const opt = this.select.options[i];
+                if (!opt || opt.disabled) continue;
+                opt.selected = targetState;
+            }
+            this.lastToggledIndex = toIdx;
+            this.syncFromSelect();
+            this.select.dispatchEvent(new Event('change', { bubbles: true }));
+            eventLike?.preventDefault?.();
+        }
+
+        // Ctrl/Cmd+A select all/clear
+        selectAll(state) {
+            if (!this.isMultiple) return;
+            Array.from(this.select.options).forEach((o) => {
+                if (!o.disabled) o.selected = state;
+            });
+            this.syncFromSelect();
+            this.select.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+
+        // sync UI from native select
         syncFromSelect() {
             const idx = this.select.selectedIndex;
-            const text = idx >= 0 ? this.select.options[idx].text : this.select.options[0]?.text || 'Select';
-            this.button.textContent = text;
+            const selectedOpts = Array.from(this.select.selectedOptions || []).map((o) => o.text);
 
+            // button text
+            if (this.isMultiple) {
+                if (selectedOpts.length === 0) this.button.textContent = 'Select';
+                else if (selectedOpts.length <= 2) this.button.textContent = selectedOpts.join(', ');
+                else this.button.textContent = `${selectedOpts.length} selected`;
+            } else {
+                const text = idx >= 0 ? this.select.options[idx].text : this.select.options[0]?.text || 'Select';
+                this.button.textContent = text;
+            }
+
+            // option rows
             this.optionEls.forEach((li, i) => {
-                if (i === idx) {
+                const opt = this.select.options[i];
+                const isSelected = !!opt.selected;
+                if (isSelected) {
                     li.classList.add('cs-selected');
                     li.setAttribute('aria-selected', 'true');
-                    this.activeIndex = i;
+                    if (!this.isMultiple) this.activeIndex = i;
                 } else {
                     li.classList.remove('cs-selected');
                     li.removeAttribute('aria-selected');
                 }
             });
+
+            // select-all row visual state
+            if (this.selectAllEl) {
+                const opts = Array.from(this.select.options).filter((o) => !o.disabled);
+                const allSelected = opts.length > 0 && opts.every((o) => o.selected);
+                this.selectAllEl.classList.toggle('cs-selected', allSelected);
+                if (allSelected) this.selectAllEl.setAttribute('aria-selected', 'true');
+                else this.selectAllEl.removeAttribute('aria-selected');
+            }
         }
 
+        // keyboard roving focus (supports Select All at index -1)
         moveActive(delta) {
-            let i = this.activeIndex ?? 0;
-            const len = this.optionEls.length;
-            for (let step = 0; step < len; step++) {
-                i = (i + delta + len) % len;
-                const opt = this.select.options[i];
-                if (opt && !opt.disabled) {
-                    this.activeIndex = i;
-                    this.highlightOnly(i);
+            const total = this.optionEls.length + (this.isMultiple ? 1 : 0);
+            // map current to combined position
+            let cur = this.isMultiple ? (this.activeIndex === -1 ? 0 : this.activeIndex + 1) : this.activeIndex;
+            // iterate
+            for (let step = 0; step < total; step++) {
+                cur = (cur + delta + total) % total;
+                // map back
+                if (this.isMultiple && cur === 0) {
+                    // Select All is never disabled
+                    this.activeIndex = -1;
+                    this.highlightOnly(-1);
                     this.scrollActiveIntoView();
-                    break;
+                    return;
+                }
+                const realIdx = this.isMultiple ? cur - 1 : cur;
+                const opt = this.select.options[realIdx];
+                if (opt && !opt.disabled) {
+                    this.activeIndex = realIdx;
+                    this.highlightOnly(realIdx);
+                    this.scrollActiveIntoView();
+                    return;
                 }
             }
         }
 
         highlightOnly(i) {
-            this.optionEls.forEach((li, idx) => {
-                li.classList.toggle('cs-active', idx === i);
-            });
+            // i = -1 means "Select All"
+            this.optionEls.forEach((li, idx) => li.classList.toggle('cs-active', idx === i));
+            if (this.selectAllEl) this.selectAllEl.classList.toggle('cs-active', i === -1);
         }
 
         scrollActiveIntoView() {
+            if (!this.isOpen) return;
+            const p = this.list;
+            if (this.activeIndex === -1 && this.selectAllEl) {
+                p.scrollTop = 0;
+                return;
+            }
             const active = this.optionEls[this.activeIndex];
             if (!active) return;
-            const p = this.list;
             const aTop = active.offsetTop,
                 aBot = aTop + active.offsetHeight;
             if (aTop < p.scrollTop) p.scrollTop = aTop;
@@ -136,17 +238,21 @@
             this.onDocClick = (e) => {
                 if (!this.wrapper.contains(e.target)) this.close();
             };
-
             this.button.addEventListener('click', () => this.toggle());
 
-            // Click on options
+            // option click handlers
             this.optionEls.forEach((li, i) => {
-                li.addEventListener('click', () => {
+                li.addEventListener('click', (e) => {
                     if (this.select.options[i].disabled) return;
-                    this.selectIndex(i);
-                    this.close();
+                    if (this.isMultiple) {
+                        if (e.shiftKey) this.selectRange(i, e);
+                        else this.selectIndex(i, true);
+                        // keep open in multiple
+                    } else {
+                        this.selectIndex(i);
+                        this.close();
+                    }
                 });
-                // Hover move highlight (nice UX)
                 li.addEventListener('mousemove', () => {
                     if (this.activeIndex !== i) {
                         this.activeIndex = i;
@@ -155,7 +261,7 @@
                 });
             });
 
-            // Keyboard: button
+            // keyboard on button
             this.button.addEventListener('keydown', (e) => {
                 switch (e.key) {
                     case 'ArrowDown':
@@ -168,8 +274,17 @@
                 }
             });
 
-            // Keyboard: list
+            // keyboard on list
             this.list.addEventListener('keydown', (e) => {
+                // Ctrl/Cmd + A (multiple)
+                if (this.isMultiple && e.key.toLowerCase?.() === 'a' && (e.ctrlKey || e.metaKey)) {
+                    e.preventDefault();
+                    const opts = Array.from(this.select.options).filter((o) => !o.disabled);
+                    const allSelected = opts.length > 0 && opts.every((o) => o.selected);
+                    this.selectAll(!allSelected);
+                    return;
+                }
+
                 switch (e.key) {
                     case 'ArrowDown':
                         e.preventDefault();
@@ -181,8 +296,8 @@
                         break;
                     case 'Home':
                         e.preventDefault();
-                        this.activeIndex = 0;
-                        this.highlightOnly(0);
+                        this.highlightOnly(this.isMultiple ? -1 : 0);
+                        this.activeIndex = this.isMultiple ? -1 : 0;
                         this.scrollActiveIntoView();
                         break;
                     case 'End':
@@ -194,29 +309,77 @@
                     case 'Enter':
                     case ' ':
                         e.preventDefault();
-                        this.selectIndex(this.activeIndex);
-                        this.close();
+                        if (this.isMultiple) {
+                            if (this.activeIndex === -1)
+                                this.toggleSelectAll(); // "Select All"
+                            else this.selectIndex(this.activeIndex, true);
+                        } else {
+                            this.selectIndex(this.activeIndex);
+                            this.close();
+                        }
                         break;
                     case 'Escape':
                     case 'Tab':
                         this.close();
                         break;
+                    default:
+                        // typeahead (single letter)
+                        if (e.key.length === 1 && /\S/.test(e.key)) {
+                            const key = e.key.toLowerCase();
+                            const start = (this.activeIndex ?? -1) + 1;
+                            const opts = Array.from(this.select.options);
+                            const find = (from) => {
+                                for (let i = from; i < opts.length; i++) {
+                                    if (!opts[i].disabled && opts[i].text.toLowerCase().startsWith(key)) return i;
+                                }
+                                return -1;
+                            };
+                            let idx = find(start);
+                            if (idx === -1) idx = find(0);
+                            if (idx !== -1) {
+                                this.activeIndex = idx;
+                                this.highlightOnly(idx);
+                                this.scrollActiveIntoView();
+                            }
+                        }
                 }
             });
 
-            // Keep in sync if someone sets select.value programmatically
+            // keep in sync if value changes programmatically
             this.select.addEventListener('change', () => this.syncFromSelect());
-            // If options change dynamically
+
+            // react to dynamic <option> changes and toggling [multiple]
             const mo = new MutationObserver(() => this.rebuildOptions());
             mo.observe(this.select, { childList: true, subtree: true, attributes: true });
             this.mutationObserver = mo;
         }
 
         rebuildOptions() {
-            // Clear and rebuild options list
+            // re-detect multiple & aria
+            this.isMultiple = !!this.select.multiple;
+            this.wrapper.classList.toggle('cs-multiple', this.isMultiple);
+            if (this.isMultiple) this.list.setAttribute('aria-multiselectable', 'true');
+            else this.list.removeAttribute('aria-multiselectable');
+
+            // clear list
             this.list.innerHTML = '';
             this.optionEls = [];
-            Array.from(this.select.options).forEach((opt) => {
+            this.selectAllEl = null;
+
+            // rebuild select-all if needed
+            if (this.isMultiple) {
+                this.selectAllEl = document.createElement('li');
+                this.selectAllEl.className = 'cs-option cs-select-all';
+                this.selectAllEl.setAttribute('role', 'option');
+                this.selectAllEl.dataset.value = '__all__';
+                this.selectAllEl.textContent = 'Select All';
+                this.list.appendChild(this.selectAllEl);
+                this.selectAllEl.addEventListener('click', () => this.toggleSelectAll());
+                this.selectAllEl.addEventListener('mousemove', () => this.highlightOnly(-1));
+            }
+
+            // rebuild options
+            Array.from(this.select.options).forEach((opt, i) => {
                 const li = document.createElement('li');
                 li.className = 'cs-option';
                 li.setAttribute('role', 'option');
@@ -225,21 +388,30 @@
                 if (opt.disabled) li.setAttribute('aria-disabled', 'true');
                 this.list.appendChild(li);
                 this.optionEls.push(li);
-                li.addEventListener('click', () => {
+
+                li.addEventListener('click', (e) => {
                     if (opt.disabled) return;
-                    this.select.value = opt.value;
-                    this.syncFromSelect();
-                    this.select.dispatchEvent(new Event('change', { bubbles: true }));
-                    this.close();
+                    if (this.isMultiple) {
+                        if (e.shiftKey) this.selectRange(i, e);
+                        else this.selectIndex(i, true);
+                    } else {
+                        this.select.value = opt.value;
+                        this.syncFromSelect();
+                        this.select.dispatchEvent(new Event('change', { bubbles: true }));
+                        this.close();
+                    }
                 });
+
                 li.addEventListener('mousemove', () => {
-                    const i = Array.from(this.select.options).indexOf(opt);
                     if (this.activeIndex !== i) {
                         this.activeIndex = i;
                         this.highlightOnly(i);
                     }
                 });
             });
+
+            // reset active index reasonably
+            this.activeIndex = this.isMultiple ? -1 : Math.max(this.select.selectedIndex, 0);
             this.syncFromSelect();
         }
     }
@@ -256,13 +428,12 @@
     // Auto-init for dynamically added elements
     const moRoot = new MutationObserver((muts) => {
         for (const m of muts) {
-            m.addedNodes &&
-                m.addedNodes.forEach((n) => {
-                    if (n.nodeType === 1) {
-                        if (n.matches?.('select[data-select-custom]')) init(n.parentNode || document);
-                        else if (n.querySelectorAll) init(n);
-                    }
-                });
+            if (!m.addedNodes) continue;
+            m.addedNodes.forEach((n) => {
+                if (n.nodeType !== 1) return;
+                if (n.matches?.('select[data-select-custom]')) init(n.parentNode || document);
+                else if (n.querySelectorAll) init(n);
+            });
         }
     });
     moRoot.observe(document.documentElement, { childList: true, subtree: true });

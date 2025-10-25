@@ -29,37 +29,49 @@ const columnsContainer = document.getElementById('columnsContainer');
 const settingsContainer = document.getElementById('settingsContainer');
 const helpContainer = document.getElementById('helpContainer');
 const passthroughTitle = document.getElementById('passthroughTitle');
+const controlTool = document.getElementById('control-tool');
+const controlPassthrough = document.getElementById('control-passthrough');
 // const sortButton = document.getElementById('sortButton');
 // const sortDropdown = document.getElementById('sortDropdown');
+// const sortText = document.getElementById('sortText');
+// const sortOptions = document.querySelectorAll('.sort-option');
 const sortSelect = document.getElementById('sortSelect');
-const sortText = document.getElementById('sortText');
-const sortOptions = document.querySelectorAll('.sort-option');
+const filterSelect = document.getElementById('filterSelect');
 const pauseButton = document.getElementById('pauseButton');
-const clearButton = document.getElementById('clearButton');
-const helpButton = document.getElementById('helpButton');
-const settingsButton = document.getElementById('settingsButton');
-const closeButton = document.getElementById('closeButton');
-const allButtons = [sortSelect, clearButton, pauseButton, helpButton, settingsButton, closeButton];
+// const clearButton = document.getElementById('clearButton');
+// const helpButton = document.getElementById('helpButton');
+// const settingsButton = document.getElementById('settingsButton');
+// const closeButton = document.getElementById('closeButton');
+// const allButtons = [sortSelect, clearButton, pauseButton, helpButton, settingsButton, closeButton];
 const serverStatus = document.getElementById('serverStatus');
 const opacitySlider = document.getElementById('opacitySlider');
-const classFilterButton = document.getElementById('classFilterButton');
-const classFilterDropdown = document.getElementById('classFilterDropdown');
-const classFilterText = document.getElementById('classFilterText');
-const classFilterCheckboxes = document.querySelectorAll('[data-class-filter]');
+// const classFilterButton = document.getElementById('classFilterButton');
+// const classFilterDropdown = document.getElementById('classFilterDropdown');
+// const classFilterText = document.getElementById('classFilterText');
+// const classFilterCheckboxes = document.querySelectorAll('[data-class-filter]');
 
 let allUsers = {};
 let userColors = {};
-let currentMode = 'damage';
 let isPaused = false;
-let selectedClasses = new Set(['all']);
 let socket = null;
 let rafPending = false;
 let hasDataChanged = false;
 let isWebSocketConnected = false;
 let lastWebSocketMessage = Date.now();
 const WEBSOCKET_RECONNECT_INTERVAL = 5000;
-
 const SERVER_URL = 'localhost:8990';
+
+let currentMode = 'damage';
+let selectedClasses = new Set([
+    'Frost Mage',
+    'Heavy Guardian',
+    'Marksman',
+    'Shield Knight',
+    'Soul Musician',
+    'Stormblade',
+    'Verdant Oracle',
+    'Wind Knight',
+]);
 
 function formatNumber(num) {
     if (isNaN(num)) return 'NaN';
@@ -420,34 +432,69 @@ function setBackgroundOpacity(value) {
     document.documentElement.style.setProperty('--main-bg-opacity', value);
 }
 
-function updateClassFilterText() {
-    if (!classFilterText) return;
+// function updateClassFilterText() {
+//     if (!classFilterText) return;
 
-    if (selectedClasses.has('all')) {
-        classFilterText.textContent = 'All Classes';
-    } else if (selectedClasses.size === 1) {
-        classFilterText.textContent = Array.from(selectedClasses)[0];
-    } else if (selectedClasses.size > 1) {
-        classFilterText.textContent = `${selectedClasses.size} classes selected`;
-    } else {
-        classFilterText.textContent = 'All Classes';
+//     if (selectedClasses.has('all')) {
+//         classFilterText.textContent = 'All Classes';
+//     } else if (selectedClasses.size === 1) {
+//         classFilterText.textContent = Array.from(selectedClasses)[0];
+//     } else if (selectedClasses.size > 1) {
+//         classFilterText.textContent = `${selectedClasses.size} classes selected`;
+//     } else {
+//         classFilterText.textContent = 'All Classes';
+//     }
+// }
+
+function setSelectValues(select, values) {
+    // Normalize input: ensure array
+    if (!Array.isArray(values)) values = [values];
+
+    // For single select: only use the first value
+    if (!select.multiple && values.length > 1) {
+        values = [values[0]];
     }
+
+    const wanted = new Set(values.map(String));
+
+    for (const opt of select.options) {
+        const shouldSelect = select.multiple ? wanted.has(opt.value) : opt.value === values[0];
+
+        if (opt.selected !== shouldSelect) {
+            opt.selected = shouldSelect;
+        }
+    }
+
+    // Fire change
+    select.dispatchEvent(new Event('change', { bubbles: true }));
 }
 
 document.addEventListener('DOMContentLoaded', () => {
     initialize();
-
     setBackgroundOpacity(opacitySlider.value);
 
     opacitySlider.addEventListener('input', (event) => {
         setBackgroundOpacity(event.target.value);
     });
 
-    if (sortSelect)
+    if (sortSelect) {
         sortSelect.addEventListener('change', (e) => {
             currentMode = e.target.value;
             updateAll();
         });
+
+        setSelectValues(sortSelect, currentMode);
+    }
+
+    if (filterSelect) {
+        filterSelect.addEventListener('change', (e) => {
+            const values = Array.from(e.target.selectedOptions).map((opt) => opt.value);
+            selectedClasses = new Set(values);
+            updateAll();
+        });
+
+        setSelectValues(filterSelect, Array.from(selectedClasses));
+    }
 
     // if (sortButton && sortDropdown) {
     //     sortButton.addEventListener('click', (e) => {
@@ -480,78 +527,71 @@ document.addEventListener('DOMContentLoaded', () => {
     // }
 
     // Toggle class filter dropdown
-    if (classFilterButton) {
-        classFilterButton.addEventListener('click', (e) => {
-            e.stopPropagation();
-            classFilterDropdown.classList.toggle('hidden');
-            classFilterButton.classList.toggle('open');
-        });
-    }
+    // if (classFilterButton) {
+    //     classFilterButton.addEventListener('click', (e) => {
+    //         e.stopPropagation();
+    //         classFilterDropdown.classList.toggle('hidden');
+    //         classFilterButton.classList.toggle('open');
+    //     });
+    // }
 
     // Close class filter dropdown when clicking outside
-    document.addEventListener('click', (e) => {
-        if (classFilterButton && classFilterDropdown) {
-            if (!classFilterButton.contains(e.target) && !classFilterDropdown.contains(e.target)) {
-                classFilterDropdown.classList.add('hidden');
-                classFilterButton.classList.remove('open');
-            }
-        }
-    });
+    // document.addEventListener('click', (e) => {
+    //     if (classFilterButton && classFilterDropdown) {
+    //         if (!classFilterButton.contains(e.target) && !classFilterDropdown.contains(e.target)) {
+    //             classFilterDropdown.classList.add('hidden');
+    //             classFilterButton.classList.remove('open');
+    //         }
+    //     }
+    // });
 
     // Handle class filter checkbox changes
-    if (classFilterCheckboxes.length > 0) {
-        classFilterCheckboxes.forEach((checkbox) => {
-            checkbox.addEventListener('change', (e) => {
-                const allCheckbox = document.querySelector('[data-class-filter][value="all"]');
-                const otherCheckboxes = Array.from(classFilterCheckboxes).filter((cb) => cb.value !== 'all');
+    // if (classFilterCheckboxes.length > 0) {
+    //     classFilterCheckboxes.forEach((checkbox) => {
+    //         checkbox.addEventListener('change', (e) => {
+    //             const allCheckbox = document.querySelector('[data-class-filter][value="all"]');
+    //             const otherCheckboxes = Array.from(classFilterCheckboxes).filter((cb) => cb.value !== 'all');
 
-                if (e.target.value === 'all') {
-                    if (e.target.checked) {
-                        otherCheckboxes.forEach((cb) => (cb.checked = false));
-                        selectedClasses = new Set(['all']);
-                    } else {
-                        e.target.checked = true;
-                        selectedClasses = new Set(['all']);
-                    }
-                } else {
-                    if (e.target.checked) {
-                        allCheckbox.checked = false;
-                    }
+    //             if (e.target.value === 'all') {
+    //                 if (e.target.checked) {
+    //                     otherCheckboxes.forEach((cb) => (cb.checked = false));
+    //                     selectedClasses = new Set(['all']);
+    //                 } else {
+    //                     e.target.checked = true;
+    //                     selectedClasses = new Set(['all']);
+    //                 }
+    //             } else {
+    //                 if (e.target.checked) {
+    //                     allCheckbox.checked = false;
+    //                 }
 
-                    selectedClasses.clear();
-                    otherCheckboxes.forEach((cb) => {
-                        if (cb.checked) {
-                            selectedClasses.add(cb.value);
-                        }
-                    });
+    //                 selectedClasses.clear();
+    //                 otherCheckboxes.forEach((cb) => {
+    //                     if (cb.checked) {
+    //                         selectedClasses.add(cb.value);
+    //                     }
+    //                 });
 
-                    if (selectedClasses.size === 0) {
-                        allCheckbox.checked = true;
-                        selectedClasses = new Set(['all']);
-                    }
-                }
+    //                 if (selectedClasses.size === 0) {
+    //                     allCheckbox.checked = true;
+    //                     selectedClasses = new Set(['all']);
+    //                 }
+    //             }
 
-                updateClassFilterText();
-                updateAll();
-            });
-        });
-    }
+    //             updateClassFilterText();
+    //             updateAll();
+    //         });
+    //     });
+    // }
 
     // Listen for the passthrough toggle event from the main process
     window.electronAPI.onTogglePassthrough((isIgnoring) => {
         if (isIgnoring) {
-            allButtons.forEach((button) => {
-                button.classList.add('hidden');
-            });
-            passthroughTitle.classList.remove('hidden');
-            columnsContainer.classList.remove('hidden');
-            settingsContainer.classList.add('hidden');
-            helpContainer.classList.add('hidden');
+            controlTool.classList.add('hidden');
+            controlPassthrough.classList.remove('hidden');
         } else {
-            allButtons.forEach((button) => {
-                button.classList.remove('hidden');
-            });
-            passthroughTitle.classList.add('hidden');
+            controlPassthrough.classList.add('hidden');
+            controlTool.classList.remove('hidden');
         }
     });
 });

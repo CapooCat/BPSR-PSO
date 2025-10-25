@@ -85,6 +85,7 @@
     list-style: none;
     display: none;
     z-index: 9999;
+    border-radius: var(--cs-radius);
 }
 .cs-open .cs-list {
     display: block;
@@ -94,17 +95,15 @@
 .cs-option {
     color: #e5e7eb;
     padding: 10px 12px;
-    border-radius: 6px;
     cursor: pointer;
     line-height: 1.2;
 }
 .cs-option + .cs-option {
-    margin-top: 2px;
     position: relative;
 }
 .cs-option + .cs-option::before {
-    content: '';
     position: absolute;
+    content: '';
     top: -2px;
     left: 8px;
     right: 8px;
@@ -120,7 +119,14 @@
     background: #656565;
     color: #fff;
     font-weight: 700;
+    display: flex;
+    gap: 6px;
 } /* selected */
+
+.cs-option.cs-selected::after {
+    content: '✓';
+    opacity: 0.9;
+}
 
 /* Disabled */
 .cs-option[aria-disabled='true'] {

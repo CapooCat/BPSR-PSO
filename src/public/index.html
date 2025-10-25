@@ -21,36 +21,25 @@
                         <span class="app-title">BPSR-PSO</span>
                     </div>
 
-                    <div class="no-drag-zone" style="display: flex; gap: 8px">
+                    <div class="no-drag-zone" id="control-tool" style="display: flex; gap: 8px">
                         <select id="sortSelect" name="sortSelect" data-select-custom>
-                            <option value="damage" selected>Damage</option>
+                            <option value="damage">Damage</option>
                             <option value="healing">Healing</option>
                             <option value="dps">DPS</option>
                             <option value="hps">HPS</option>
                         </select>
 
                         <div class="button-group">
-                            <!-- <div class="custom-sort-select">
-                            <button type="button" id="sortButton" class="sort-select">
-                                <span id="sortText">Damage</span>
-                                <span class="dropdown-arrow">▼</span>
-                            </button>
-                            <div id="sortDropdown" class="sort-dropdown hidden">
-                                <div class="sort-option active" data-value="damage">Damage</div>
-                                <div class="sort-option" data-value="healing">Healing</div>
-                                <div class="sort-option" data-value="taken">Taken</div>
-                                <div class="sort-option" data-value="dps">DPS</div>
-                                <div class="sort-option" data-value="hps">HPS</div>
-                            </div>
-                        </div> -->
-
                             <button id="clearButton" onclick="clearData()" title="Clear Data">🗑️</button>
                             <button id="pauseButton" onclick="togglePause()" title="Pause/Resume">⏸</button>
                             <button id="helpButton" onclick="toggleHelp()" title="Help">❓</button>
                             <button id="settingsButton" onclick="toggleSettings()" title="Settings">⚙️</button>
                             <button id="closeButton" onclick="closeClient()" title="Close Client">X</button>
-                            <span id="passthroughTitle" class="passthrough-title hidden"> Passthrough Enabled </span>
                         </div>
+                    </div>
+
+                    <div class="no-drag-zone hidden" id="control-passthrough" style="display: flex; gap: 8px">
+                        <span class="passthrough-title"> Passthrough Enabled </span>
                     </div>
                 </div>
                 <div id="columnsContainer" class="columns-container"></div>
@@ -61,6 +50,20 @@
                     </div>
 
                     <div class="settings-option">
+                        <label for="filterSelect">Filter by Class</label>
+                        <select id="filterSelect" name="filterSelect" data-select-custom multiple>
+                            <option data-img="" value="Frost Mage">Frost Mage</option>
+                            <option data-img="" value="Heavy Guardian">Heavy Guardian</option>
+                            <option data-img="" value="Marksman">Marksman</option>
+                            <option data-img="" value="Shield Knight">Shield Knight</option>
+                            <option data-img="" value="Soul Musician">Soul Musician</option>
+                            <option data-img="" value="Stormblade">Storm Blade</option>
+                            <option data-img="" value="Verdant Oracle">Verdant Oracle</option>
+                            <option data-img="" value="Wind Knight">Wind Knight</option>
+                        </select>
+                    </div>
+
+                    <!-- <div class="settings-option">
                         <label for="classFilterButton">Filter by Class:</label>
                         <div class="custom-multiselect">
                             <button type="button" id="classFilterButton" class="multiselect-button">
@@ -106,7 +109,7 @@
                                 </label>
                             </div>
                         </div>
-                    </div>
+                    </div> -->
                 </div>
                 <div id="helpContainer" class="help-container hidden">
                     <h2>Keyboard Shortcuts</h2>
@@ -145,7 +148,7 @@
                 </div>
             </div>
         </div>
-        <script src="script.js"></script>
         <script src="components/select/index.js"></script>
+        <script src="script.js"></script>
     </body>
 </html>
