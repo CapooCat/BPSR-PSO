@@ -28,7 +28,7 @@ const clearDataOnServerChange = () => {
 export class PacketInterceptor {
     static start(server, port, resolve, reject) {
         server.listen(port, async () => {
-            const devices = cap.deviceList();
+            let devices = cap.deviceList();
             let num;
 
             console.log('Auto detecting default network interface...');
@@ -39,6 +39,21 @@ export class PacketInterceptor {
             } else {
                 return reject(new Error('Default network interface not found!'));
             }
+
+            const getDeviceSignature = (deviceInfo) => {
+                if (!deviceInfo) {
+                    return '';
+                }
+                const addresses = (deviceInfo.addresses || [])
+                    .map((addr) => addr.addr)
+                    .filter(Boolean)
+                    .sort()
+                    .join(',');
+                return `${deviceInfo.name}::${addresses}`;
+            };
+
+            let activeDeviceName = devices[num]?.name;
+            let activeDeviceSignature = getDeviceSignature(devices[num]);
 
             if (!zlib.zstdDecompressSync) {
                 const errorMsg = 'zstdDecompressSync is not available! Please update your Node.js!';
@@ -117,11 +132,10 @@ export class PacketInterceptor {
             };
 
             const c = new Cap();
-            const device = devices[num].name;
             const filter = 'ip and tcp';
             const bufSize = 10 * 1024 * 1024;
             const buffer = Buffer.alloc(65535);
-            const linkType = c.open(device, filter, bufSize, buffer);
+            let linkType = c.open(activeDeviceName, filter, bufSize, buffer);
             if (linkType !== 'ETHERNET') {
                 logger.error('The device seems to be WRONG! Please check the device! Device type: ' + linkType);
             }
@@ -131,6 +145,50 @@ export class PacketInterceptor {
             c.on('packet', (nbytes) => {
                 eth_queue.push(Buffer.from(buffer.subarray(0, nbytes)));
             });
+
+            const switchNetworkDevice = async (latestDevices, newIndex) => {
+                const deviceInfo = latestDevices[newIndex];
+                if (newIndex === null || newIndex === undefined || !deviceInfo) {
+                    return;
+                }
+
+                const newDeviceName = deviceInfo.name;
+                const newDescription = deviceInfo.description;
+                const newSignature = getDeviceSignature(deviceInfo);
+
+                if (newSignature === activeDeviceSignature) {
+                    return;
+                }
+
+                try {
+                    c.close();
+                } catch (error) {
+                    logger.warn('Failed to close previous capture while switching network device:', error);
+                }
+
+                devices = latestDevices;
+
+                try {
+                    linkType = c.open(newDeviceName, filter, bufSize, buffer);
+                    if (linkType !== 'ETHERNET') {
+                        logger.error(
+                            'The device seems to be WRONG after switching! Please check the device! Device type: ' +
+                                linkType
+                        );
+                    }
+                    c.setMinBytes && c.setMinBytes(0);
+                    current_server = '';
+                    clearTcpCache();
+                    eth_queue.length = 0;
+                    fragmentIpCache.clear();
+                    clearDataOnServerChange();
+                    activeDeviceName = newDeviceName;
+                    activeDeviceSignature = newSignature;
+                    logger.info(`Switched to network interface: ${newIndex} - ${newDescription}`);
+                } catch (error) {
+                    logger.error('Failed to reopen capture on the new network device:', error);
+                }
+            };
 
             const processEthPacket = async (frameBuffer) => {
                 const ethPacket = decoders.Ethernet(frameBuffer);
@@ -282,6 +340,33 @@ export class PacketInterceptor {
                     clearTcpCache();
                 }
             }, 10000);
+
+            let isCheckingNetwork = false;
+            const NETWORK_CHECK_INTERVAL = 5000;
+            const networkMonitor = setInterval(async () => {
+                if (isCheckingNetwork) {
+                    return;
+                }
+                isCheckingNetwork = true;
+                try {
+                    const latestDevices = cap.deviceList();
+                    const detectedIndex = await findDefaultNetworkDevice(latestDevices);
+                    await switchNetworkDevice(latestDevices, detectedIndex);
+                } catch (error) {
+                    logger.warn('Failed to evaluate network adapter changes:', error);
+                } finally {
+                    isCheckingNetwork = false;
+                }
+            }, NETWORK_CHECK_INTERVAL);
+
+            server.on('close', () => {
+                clearInterval(networkMonitor);
+                try {
+                    c.close();
+                } catch (error) {
+                    logger.warn('Failed to close capture on server shutdown:', error);
+                }
+            });
 
             resolve(url);
         });
